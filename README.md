@@ -1,23 +1,26 @@
-# 🍽️ **Restaurant POS System**  
+# 🍽️ **Sideways Grillz — Restaurant POS System**  
 
-A full-featured **Restaurant POS System** built using the **MERN Stack** to streamline restaurant operations, enhance customer experience, and manage orders, payments, and inventory with ease.
+A full-featured **Restaurant POS System** built with **React, Redux Toolkit, Tailwind CSS, and Supabase** to streamline restaurant operations, enhance customer experience, and manage dine-in, takeout, delivery orders, payments, thermal printing, and accounting with ease.
 
 ## ✨ **Features**
 
-- 🍽️ **Order Management**  
-  Efficiently manage customer orders with real-time updates and status tracking.
+- 🍽️ **Order Management (Dine In, Takeout & Delivery)**  
+  Efficiently manage dine-in, takeout, and delivery orders with real-time updates, status tracking, and waiter attribution.
 
 - 🪑 **Table Reservations**  
   Simplify table bookings and manage reservations directly from the POS.
 
 - 🔐 **Authentication**  
-  Secure login and role-based access control for admins, staff, and users.
+  Secure Username + PIN login and role-based access control via Supabase Auth for admins and staff.
 
-- 💸 **Payment Integration**  
-  Integrated with **Razorpay** (or other gateways) for seamless online payments.
+- 💸 **Payment Integration (Paystack & Cash)**  
+  Integrated with **Paystack (GH₵ / GHS)** and cash/shift handover tracking for seamless payments.
 
-- 🧾 **Billing & Invoicing**  
-  Automatically generate detailed bills and invoices for every order.
+- 🧾 **Thermal Receipts & Kitchen Tickets (KOT)**  
+  80mm / 58mm thermal-printer-ready Cashier Receipts and Kitchen Order Tickets with admin reprinting.
+
+- 📊 **Accounting & Waiter Sales Analytics**  
+  Track expenses, daily/weekly/monthly sales, net profit, and individual waiter sales performance.
 
 
 ## 🏗️ **Tech Stack**
@@ -25,13 +28,11 @@ A full-featured **Restaurant POS System** built using the **MERN Stack** to stre
 | **Category**             | **Technology**                |
 |--------------------------|-------------------------------|
 | 🖥️ **Frontend**          | React.js, Redux, Tailwind CSS  |
-| 🔙 **Backend**           | Node.js, Express.js           |
-| 🗄️ **Database**          | MongoDB                       |
-| 🔐 **Authentication**    | JWT, bcrypt                   |
-| 💳 **Payment Integration**| Razorpay    |
+| 🗄️ **Backend & Database**| Supabase (PostgreSQL, Auth, RLS) |
+| 🔐 **Authentication**    | Supabase Auth (Username + PIN RBAC) |
+| 💳 **Payment Integration**| Paystack (GHS / GH₵)          |
 | 📊 **State Management**   | Redux Toolkit                 |
 | ⚡ **Data Fetching & Caching** | React Query            |
-| 🔗 **APIs**              | RESTful APIs                   |
 
 ---
 <br>
