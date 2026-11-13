@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { FaSearch, FaUserCircle, FaBell, FaSignOutAlt, FaTachometerAlt, FaDatabase } from "react-icons/fa";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { FaSearch, FaUserCircle, FaBell, FaSignOutAlt, FaTachometerAlt, FaDatabase, FaCheckDouble, FaExclamationTriangle, FaUtensils, FaWifi } from "react-icons/fa";
 import logo from "../../assets/images/logo.png";
 import { useDispatch, useSelector } from "react-redux";
-import { useMutation } from "@tanstack/react-query";
-import { logout } from "../../https";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getOrders, logout } from "../../https";
 import { removeUser } from "../../redux/slices/userSlice";
 import { useNavigate } from "react-router-dom";
 import { FaMoneyBillWave } from "react-icons/fa6";
 import ShiftHandoverModal from "./ShiftHandoverModal";
 import LocalSyncModal from "./LocalSyncModal";
 import { getLocalAgentStatus } from "../../utils/localSyncAgent";
+import { getOfflineOrders } from "../../utils/offlineQueue";
+import { getIncidents } from "../../utils/incidentsStorage";
 
 const Header = () => {
   const userData = useSelector((state) => state.user);
@@ -17,8 +19,93 @@ const Header = () => {
   const navigate = useNavigate();
   const [showShiftModal, setShowShiftModal] = useState(false);
   const [showLocalSyncModal, setShowLocalSyncModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [dismissedIds, setDismissedIds] = useState([]);
   const [agentRunning, setAgentRunning] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const bellWrapperRef = useRef(null);
+
+  const isAdmin = (userData.role || "").toLowerCase() === "admin";
+
+  const { data: ordersRes } = useQuery({
+    queryKey: ["orders"],
+    queryFn: getOrders,
+    refetchInterval: 30000,
+  });
+
+  const { data: incidentsList = [] } = useQuery({
+    queryKey: ["incidents"],
+    queryFn: getIncidents,
+    enabled: isAdmin,
+    refetchInterval: 60000,
+  });
+
+  const notifications = useMemo(() => {
+    const items = [];
+    const offlineOrders = getOfflineOrders();
+    if (offlineOrders.length > 0) {
+      items.push({
+        id: `offline-${offlineOrders.length}`,
+        type: "offline",
+        title: `${offlineOrders.length} offline order(s) pending sync`,
+        subtitle: "Tap to open Local Sync & upload",
+        action: () => {
+          setShowNotifications(false);
+          setShowLocalSyncModal(true);
+        },
+      });
+    }
+
+    const orders = ordersRes?.data?.data || [];
+    orders
+      .filter((o) => o.orderStatus === "Ready" || o.orderStatus === "InProgress")
+      .slice(0, 6)
+      .forEach((o) => {
+        const orderId = o._id || o.id;
+        const customer = o.customerDetails?.name || "Walk-in";
+        const tableLabel = o.table?.tableNo ? `Table ${o.table.tableNo}` : (o.customerDetails?.orderType || "Order");
+        items.push({
+          id: `order-${orderId}-${o.orderStatus}`,
+          type: o.orderStatus === "Ready" ? "ready" : "progress",
+          title: o.orderStatus === "Ready" ? `Ready: ${customer}` : `In Progress: ${customer}`,
+          subtitle: `${tableLabel} • ${o.items?.length || 0} item(s)`,
+          action: () => {
+            setShowNotifications(false);
+            navigate("/orders");
+          },
+        });
+      });
+
+    if (isAdmin && Array.isArray(incidentsList)) {
+      incidentsList
+        .filter((inc) => (inc.status || "Open") === "Open")
+        .slice(0, 4)
+        .forEach((inc) => {
+          items.push({
+            id: `incident-${inc.id}`,
+            type: "incident",
+            title: `Open Incident (${inc.severity || "Medium"})`,
+            subtitle: `${inc.category || "Report"} • ${inc.reportedBy || "Staff"}`,
+            action: () => {
+              setShowNotifications(false);
+              navigate("/dashboard");
+            },
+          });
+        });
+    }
+
+    return items.filter((item) => !dismissedIds.includes(item.id));
+  }, [ordersRes, incidentsList, isAdmin, dismissedIds, navigate]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (bellWrapperRef.current && !bellWrapperRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const checkAgent = async () => {
@@ -63,8 +150,6 @@ const Header = () => {
   const handleLogout = () => {
     logoutMutation.mutate();
   };
-
-  const isAdmin = (userData.role || "").toLowerCase() === "admin";
 
   return (
     <>
@@ -138,8 +223,78 @@ const Header = () => {
             </div>
           )}
 
-          <div className="bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#333] rounded-xl p-2.5 cursor-pointer text-[#ababab] transition-colors">
-            <FaBell className="text-xl" />
+          <div className="relative" ref={bellWrapperRef}>
+            <button
+              type="button"
+              onClick={() => setShowNotifications((prev) => !prev)}
+              className="relative bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#333] rounded-xl p-2.5 cursor-pointer text-[#ababab] hover:text-yellow-400 transition-colors"
+              title="Notifications"
+            >
+              <FaBell className="text-xl" />
+              {notifications.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow">
+                  {notifications.length > 9 ? "9+" : notifications.length}
+                </span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-[#1a1a1a] border border-[#2f2f2f] rounded-2xl shadow-2xl z-50 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a]">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#f5f5f5]">
+                    Notifications ({notifications.length})
+                  </span>
+                  {notifications.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setDismissedIds((prev) => [...prev, ...notifications.map((n) => n.id)])}
+                      className="flex items-center gap-1 text-[11px] text-yellow-400 hover:text-yellow-300 cursor-pointer"
+                    >
+                      <FaCheckDouble size={11} />
+                      <span>Clear all</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-h-80 overflow-y-auto divide-y divide-[#252525]">
+                  {notifications.length === 0 ? (
+                    <div className="py-8 px-4 text-center text-xs text-[#777]">
+                      No active notifications right now.
+                    </div>
+                  ) : (
+                    notifications.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={item.action}
+                        className="w-full text-left px-4 py-3 hover:bg-[#232323] transition-colors flex items-start gap-3 cursor-pointer"
+                      >
+                        <div className="mt-0.5">
+                          {item.type === "offline" ? (
+                            <FaWifi className="text-amber-400" size={14} />
+                          ) : item.type === "incident" ? (
+                            <FaExclamationTriangle className="text-red-400" size={14} />
+                          ) : (
+                            <FaUtensils
+                              className={item.type === "ready" ? "text-emerald-400" : "text-yellow-400"}
+                              size={14}
+                            />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-[#f5f5f5] truncate">
+                            {item.title}
+                          </p>
+                          <p className="text-[11px] text-[#888] truncate mt-0.5">
+                            {item.subtitle}
+                          </p>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* User Profile */}
