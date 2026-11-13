@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getTotalPrice } from "../../redux/slices/cartSlice";
 import {
@@ -11,6 +11,11 @@ import { useMutation } from "@tanstack/react-query";
 import { removeAllItems } from "../../redux/slices/cartSlice";
 import { removeCustomer } from "../../redux/slices/customerSlice";
 import Invoice from "../invoice/Invoice";
+import {
+  getSettingsSync,
+  SETTINGS_UPDATED_EVENT,
+  dispatchOrderSmsIfEnabled,
+} from "../../utils/settingsStorage";
 
 function loadScript(src) {
   return new Promise((resolve) => {
@@ -33,8 +38,19 @@ const Bill = () => {
   const customerData = useSelector((state) => state.customer);
   const cartData = useSelector((state) => state.cart);
   const total = useSelector(getTotalPrice);
-  const taxRate = 5.25;
-  const tax = (total * taxRate) / 100;
+  const [vatRate, setVatRate] = useState(() => getSettingsSync().vatRate ?? 5.25);
+
+  useEffect(() => {
+    const onSettingsUpdated = (e) => {
+      if (e.detail?.vatRate !== undefined) {
+        setVatRate(Number(e.detail.vatRate));
+      }
+    };
+    window.addEventListener(SETTINGS_UPDATED_EVENT, onSettingsUpdated);
+    return () => window.removeEventListener(SETTINGS_UPDATED_EVENT, onSettingsUpdated);
+  }, []);
+
+  const tax = (total * vatRate) / 100;
   const totalPriceWithTax = total + tax;
 
   const [paymentMethod, setPaymentMethod] = useState();
@@ -195,6 +211,14 @@ const Bill = () => {
 
       setOrderInfo(data);
 
+      dispatchOrderSmsIfEnabled({
+        eventType: "placed",
+        customerName: data.customerDetails?.name,
+        customerPhone: data.customerDetails?.phone,
+        orderId: data._id || data.id,
+        total: data.bills?.totalWithTax,
+      });
+
       // Update Table status to Booked if a table was assigned (Dine In)
       if (data.table) {
         const tableData = {
@@ -245,7 +269,7 @@ const Bill = () => {
         </h1>
       </div>
       <div className="flex items-center justify-between px-5 mt-2">
-        <p className="text-xs text-[#ababab] font-medium mt-2">Tax(5.25%)</p>
+        <p className="text-xs text-[#ababab] font-medium mt-2">VAT ({vatRate}%)</p>
         <h1 className="text-[#f5f5f5] text-md font-bold">GH₵ {tax.toFixed(2)}</h1>
       </div>
       <div className="flex items-center justify-between px-5 mt-2">

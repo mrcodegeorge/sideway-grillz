@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd pos-frontend && npm install && npm run build",
+  "outputDirectory": "pos-frontend/dist",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

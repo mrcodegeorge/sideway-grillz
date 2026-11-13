@@ -6,6 +6,7 @@ import {
 } from "../../https";
 import { enqueueSnackbar } from "notistack";
 import { FaMoneyBillWave, FaCreditCard, FaReceipt, FaXmark, FaCheck } from "react-icons/fa6";
+import { dispatchEmailIfEnabled } from "../../utils/settingsStorage";
 
 const ShiftHandoverModal = ({ isOpen, onClose }) => {
   const userData = useSelector((state) => state.user);
@@ -56,6 +57,11 @@ const ShiftHandoverModal = ({ isOpen, onClose }) => {
       });
 
       setSubmittedHandover(res.data.data);
+      dispatchEmailIfEnabled({
+        eventType: "handover",
+        subject: `Shift Handover Submitted — ${userData.name || userData.username}`,
+        text: `Staff: ${userData.name || userData.username}\nOrders: ${summary.totalOrders}\nCash Collected: GH₵ ${Number(summary.cashCollected || 0).toFixed(2)}\nOnline Collected: GH₵ ${Number(summary.onlineCollected || 0).toFixed(2)}\nTotal Collected: GH₵ ${Number(summary.totalCollected || 0).toFixed(2)}\nNotes: ${notes || "None"}`,
+      });
       enqueueSnackbar("Shift cash handover submitted successfully!", {
         variant: "success",
       });

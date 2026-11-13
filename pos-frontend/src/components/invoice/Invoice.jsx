@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { getSettingsSync } from "../../utils/settingsStorage";
 
 const Invoice = ({
   orderInfo,
@@ -10,6 +11,7 @@ const Invoice = ({
   const [paperWidth, setPaperWidth] = useState("80mm");
   const cashierRef = useRef(null);
   const kitchenRef = useRef(null);
+  const settings = getSettingsSync();
 
   if (!orderInfo) return null;
 
@@ -181,7 +183,15 @@ const Invoice = ({
   const renderCashierBody = () => (
     <div style={{ fontFamily: "'Courier New', Courier, monospace" }} className="text-black text-xs leading-snug">
       <div className="text-center">
-        <div className="text-base font-bold tracking-wide uppercase">SIDEWAYS GRILLZ</div>
+        <div className="text-base font-bold tracking-wide uppercase">
+          {settings.businessName || "SIDEWAYS GRILLZ"}
+        </div>
+        {settings.businessAddress && (
+          <div className="text-[10px]">{settings.businessAddress}</div>
+        )}
+        {settings.businessPhone && (
+          <div className="text-[10px]">Tel: {settings.businessPhone}</div>
+        )}
         <div className="text-[11px] font-bold uppercase mt-0.5">
           {isReprint ? "*** REPRINT: CASHIER COPY ***" : "CASHIER RECEIPT"}
         </div>
@@ -254,7 +264,7 @@ const Invoice = ({
           <span>GH₵ {Number(orderInfo.bills?.total || 0).toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
-          <span>TAX (5.25%)</span>
+          <span>VAT ({settings.vatRate ?? 5.25}%)</span>
           <span>GH₵ {Number(orderInfo.bills?.tax || 0).toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-sm font-bold pt-1 border-t border-dashed border-black mt-1">
@@ -279,7 +289,7 @@ const Invoice = ({
 
       <hr className="border-t border-dashed border-black my-2" />
       <div className="text-center text-[11px] font-bold">
-        THANK YOU FOR DINING WITH US!
+        {settings.receiptFooter || "THANK YOU FOR DINING WITH US!"}
       </div>
     </div>
   );
@@ -352,8 +362,8 @@ const Invoice = ({
               type="button"
               onClick={() => setCopyType("cashier")}
               className={`py-1.5 text-xs font-bold rounded-md transition-colors ${copyType === "cashier"
-                  ? "bg-[#f6b100] text-[#1f1f1f]"
-                  : "text-[#ababab] hover:text-white"
+                ? "bg-[#f6b100] text-[#1f1f1f]"
+                : "text-[#ababab] hover:text-white"
                 }`}
             >
               Cashier Copy
@@ -362,8 +372,8 @@ const Invoice = ({
               type="button"
               onClick={() => setCopyType("kitchen")}
               className={`py-1.5 text-xs font-bold rounded-md transition-colors ${copyType === "kitchen"
-                  ? "bg-[#f6b100] text-[#1f1f1f]"
-                  : "text-[#ababab] hover:text-white"
+                ? "bg-[#f6b100] text-[#1f1f1f]"
+                : "text-[#ababab] hover:text-white"
                 }`}
             >
               Kitchen KOT
@@ -378,8 +388,8 @@ const Invoice = ({
                 type="button"
                 onClick={() => setPaperWidth(w)}
                 className={`px-2 py-1.5 text-[11px] font-bold rounded-md transition-colors ${paperWidth === w
-                    ? "bg-[#383838] text-white"
-                    : "text-[#888] hover:text-white"
+                  ? "bg-[#383838] text-white"
+                  : "text-[#888] hover:text-white"
                   }`}
               >
                 {w}

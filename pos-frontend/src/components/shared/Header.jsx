@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { FaSearch, FaUserCircle, FaBell, FaSignOutAlt, FaTachometerAlt } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import { FaSearch, FaUserCircle, FaBell, FaSignOutAlt, FaTachometerAlt, FaDatabase } from "react-icons/fa";
 import logo from "../../assets/images/logo.png";
 import { useDispatch, useSelector } from "react-redux";
 import { useMutation } from "@tanstack/react-query";
@@ -8,12 +8,44 @@ import { removeUser } from "../../redux/slices/userSlice";
 import { useNavigate } from "react-router-dom";
 import { FaMoneyBillWave } from "react-icons/fa6";
 import ShiftHandoverModal from "./ShiftHandoverModal";
+import LocalSyncModal from "./LocalSyncModal";
+import { getLocalAgentStatus } from "../../utils/localSyncAgent";
 
 const Header = () => {
   const userData = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [showShiftModal, setShowShiftModal] = useState(false);
+  const [showLocalSyncModal, setShowLocalSyncModal] = useState(false);
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const checkAgent = async () => {
+      const status = await getLocalAgentStatus();
+      setAgentRunning(Boolean(status?.running));
+    };
+    checkAgent();
+    const interval = setInterval(checkAgent, 15000);
+
+    const handleInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handleInstallPrompt);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("beforeinstallprompt", handleInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+  };
 
   const logoutMutation = useMutation({
     mutationFn: () => logout(),
@@ -69,6 +101,21 @@ const Header = () => {
 
         {/* LOGGED USER CONTROLS */}
         <div className="flex items-center gap-4">
+          {/* Local DB & Sync Agent Button */}
+          <button
+            type="button"
+            onClick={() => setShowLocalSyncModal(true)}
+            className="flex items-center gap-2 bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#333] text-[#f5f5f5] px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+            title="Offline Mode & Local Background Sync Agent"
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${agentRunning ? "bg-emerald-400" : "bg-amber-400"
+                }`}
+            />
+            <FaDatabase size={13} className="text-yellow-400" />
+            <span className="hidden sm:inline">Local Sync</span>
+          </button>
+
           {/* Shift Cash Handover Button */}
           <button
             type="button"
@@ -122,6 +169,14 @@ const Header = () => {
       <ShiftHandoverModal
         isOpen={showShiftModal}
         onClose={() => setShowShiftModal(false)}
+      />
+
+      {/* Local Background DB & Sync Agent Modal */}
+      <LocalSyncModal
+        isOpen={showLocalSyncModal}
+        onClose={() => setShowLocalSyncModal(false)}
+        deferredPrompt={deferredPrompt}
+        onInstallPwa={handleInstallPwa}
       />
     </>
   );

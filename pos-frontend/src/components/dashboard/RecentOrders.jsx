@@ -5,6 +5,7 @@ import { FaReceipt, FaUtensils } from "react-icons/fa";
 import { getOrders, updateOrderStatus } from "../../https/index";
 import { formatDateAndTime } from "../../utils";
 import Invoice from "../invoice/Invoice";
+import { dispatchOrderSmsIfEnabled } from "../../utils/settingsStorage";
 
 const RecentOrders = () => {
   const queryClient = useQueryClient();
@@ -15,9 +16,23 @@ const RecentOrders = () => {
     setReprintOrder(order);
     setReprintCopyType(copyType);
   };
-  const handleStatusChange = ({ orderId, orderStatus }) => {
-    console.log(orderId)
-    orderStatusUpdateMutation.mutate({ orderId, orderStatus });
+  const handleStatusChange = ({ order, orderId, orderStatus }) => {
+    orderStatusUpdateMutation.mutate(
+      { orderId, orderStatus },
+      {
+        onSuccess: () => {
+          if (orderStatus === "Ready" && order) {
+            dispatchOrderSmsIfEnabled({
+              eventType: "ready",
+              customerName: order.customerDetails?.name,
+              customerPhone: order.customerDetails?.phone,
+              orderId,
+              total: order.bills?.totalWithTax,
+            });
+          }
+        },
+      }
+    );
   };
 
   const orderStatusUpdateMutation = useMutation({
@@ -97,7 +112,7 @@ const RecentOrders = () => {
                           : "text-yellow-500"
                         }`}
                       value={order.orderStatus || "InProgress"}
-                      onChange={(e) => handleStatusChange({ orderId: order._id, orderStatus: e.target.value })}
+                      onChange={(e) => handleStatusChange({ order, orderId: order._id, orderStatus: e.target.value })}
                     >
                       <option className="text-yellow-500" value="InProgress">
                         In Progress

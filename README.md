@@ -84,3 +84,5 @@ A full-featured **Restaurant POS System** built with **React, Redux Toolkit, Tai
 ⭐ If you find this project helpful, don't forget to **star** the repository! 🌟
 
 # sideway-grillz
+
+Built by **Neolifeporium**

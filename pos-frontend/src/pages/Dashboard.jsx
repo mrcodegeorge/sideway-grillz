@@ -6,6 +6,10 @@ import RecentOrders from "../components/dashboard/RecentOrders";
 import Modal from "../components/dashboard/Modal";
 import ShiftHandoversAdmin from "../components/dashboard/ShiftHandoversAdmin";
 import Accounting from "../components/dashboard/Accounting";
+import IncidentsAdmin from "../components/dashboard/IncidentsAdmin";
+import UsersAdmin from "../components/dashboard/UsersAdmin";
+import CustomersAdmin from "../components/dashboard/CustomersAdmin";
+import SettingsAdmin from "../components/dashboard/SettingsAdmin";
 
 const buttons = [
   { label: "Add Table", icon: <FaTable />, action: "table" },
@@ -13,7 +17,7 @@ const buttons = [
   { label: "Add Dishes", icon: <BiSolidDish />, action: "dishes" },
 ];
 
-const tabs = ["Metrics", "Orders", "Accounting", "Shift Handovers"];
+const tabs = ["Metrics", "Orders", "Accounting", "Customers", "Incidents", "Users", "Shift Handovers", "Settings"];
 
 const Dashboard = () => {
   useEffect(() => {
@@ -66,11 +70,19 @@ const Dashboard = () => {
       {activeTab === "Metrics" && <Metrics />}
       {activeTab === "Orders" && <RecentOrders />}
       {activeTab === "Accounting" && <Accounting />}
+      {activeTab === "Customers" && <CustomersAdmin />}
+      {activeTab === "Incidents" && <IncidentsAdmin />}
+      {activeTab === "Users" && <UsersAdmin />}
       {activeTab === "Shift Handovers" && <ShiftHandoversAdmin />}
+      {activeTab === "Settings" && <SettingsAdmin />}
 
       {modalType && (
         <Modal modalType={modalType} onClose={() => setModalType(null)} />
       )}
+
+      <footer className="text-center py-4 text-xs text-[#777] border-t border-[#2a2a2a] mt-8">
+        Built by <span className="text-yellow-400 font-semibold">Neolifeporium</span>
+      </footer>
     </div>
   );
 };
