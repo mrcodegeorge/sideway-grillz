@@ -6,7 +6,7 @@ import { enqueueSnackbar } from "notistack";
 import { getOrders } from "../../https/index";
 
 const RecentOrders = () => {
-  const { data: resData, isError } = useQuery({
+  const { data: resData, isLoading, isError } = useQuery({
     queryKey: ["orders"],
     queryFn: async () => {
       return await getOrders();
@@ -17,6 +17,8 @@ const RecentOrders = () => {
   if (isError) {
     enqueueSnackbar("Something went wrong!", { variant: "error" });
   }
+
+  const orders = resData?.data?.data || [];
 
   return (
     <div className="px-8 mt-6">
@@ -41,8 +43,10 @@ const RecentOrders = () => {
 
         {/* Order list */}
         <div className="mt-4 px-6 overflow-y-scroll h-[300px] scrollbar-hide">
-          {resData?.data.data.length > 0 ? (
-            resData.data.data.map((order) => {
+          {isLoading ? (
+            <p className="text-gray-400">Loading recent orders...</p>
+          ) : orders.length > 0 ? (
+            orders.map((order) => {
               return <OrderList key={order._id} order={order} />;
             })
           ) : (

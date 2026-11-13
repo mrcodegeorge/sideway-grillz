@@ -42,6 +42,13 @@ const Bill = () => {
   const [orderInfo, setOrderInfo] = useState();
 
   const handlePlaceOrder = async () => {
+    if (!cartData || cartData.length === 0) {
+      enqueueSnackbar("Cart is empty! Add items first.", {
+        variant: "warning",
+      });
+      return;
+    }
+
     if (!paymentMethod) {
       enqueueSnackbar("Please select a payment method!", {
         variant: "warning",
@@ -109,15 +116,17 @@ const Bill = () => {
                 name: customerData.customerName,
                 phone: customerData.customerPhone,
                 guests: customerData.guests,
+                orderType: customerData.orderType || "Dine In",
+                deliveryAddress: customerData.deliveryAddress || "",
               },
-              orderStatus: "In Progress",
+              orderStatus: "InProgress",
               bills: {
                 total: total,
                 tax: tax,
                 totalWithTax: totalPriceWithTax,
               },
               items: cartData,
-              table: customerData.table.tableId,
+              table: customerData.table?.tableId || null,
               paymentMethod: "Paystack",
               paymentData: {
                 paystack_reference: response.reference,
@@ -150,15 +159,17 @@ const Bill = () => {
           name: customerData.customerName,
           phone: customerData.customerPhone,
           guests: customerData.guests,
+          orderType: customerData.orderType || "Dine In",
+          deliveryAddress: customerData.deliveryAddress || "",
         },
-        orderStatus: "In Progress",
+        orderStatus: "InProgress",
         bills: {
           total: total,
           tax: tax,
           totalWithTax: totalPriceWithTax,
         },
         items: cartData,
-        table: customerData.table.tableId,
+        table: customerData.table?.tableId || null,
         paymentMethod: paymentMethod,
       };
       orderMutation.mutate(orderData);
@@ -184,16 +195,22 @@ const Bill = () => {
 
       setOrderInfo(data);
 
-      // Update Table status to Booked
-      const tableData = {
-        status: "Booked",
-        orderId: data._id || data.id,
-        tableId: data.table,
-      };
+      // Update Table status to Booked if a table was assigned (Dine In)
+      if (data.table) {
+        const tableData = {
+          status: "Booked",
+          orderId: data._id || data.id,
+          tableId: data.table,
+        };
 
-      setTimeout(() => {
-        tableUpdateMutation.mutate(tableData);
-      }, 1000);
+        setTimeout(() => {
+          tableUpdateMutation.mutate(tableData);
+        }, 1000);
+      } else {
+        // Takeout or Delivery: clear customer & cart immediately
+        dispatch(removeCustomer());
+        dispatch(removeAllItems());
+      }
 
       enqueueSnackbar("Order Placed Successfully!", {
         variant: "success",

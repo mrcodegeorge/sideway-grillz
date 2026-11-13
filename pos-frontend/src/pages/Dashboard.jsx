@@ -5,6 +5,7 @@ import Metrics from "../components/dashboard/Metrics";
 import RecentOrders from "../components/dashboard/RecentOrders";
 import Modal from "../components/dashboard/Modal";
 import ShiftHandoversAdmin from "../components/dashboard/ShiftHandoversAdmin";
+import Accounting from "../components/dashboard/Accounting";
 
 const buttons = [
   { label: "Add Table", icon: <FaTable />, action: "table" },
@@ -12,7 +13,7 @@ const buttons = [
   { label: "Add Dishes", icon: <BiSolidDish />, action: "dishes" },
 ];
 
-const tabs = ["Metrics", "Orders", "Shift Handovers"];
+const tabs = ["Metrics", "Orders", "Accounting", "Shift Handovers"];
 
 const Dashboard = () => {
   useEffect(() => {
@@ -50,8 +51,8 @@ const Dashboard = () => {
               <button
                 key={tab}
                 className={`px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${isActive
-                    ? "bg-yellow-400 text-gray-900 shadow-md shadow-yellow-500/20"
-                    : "bg-[#1a1a1a] text-[#ababab] hover:text-white border border-[#2e2e2e]"
+                  ? "bg-yellow-400 text-gray-900 shadow-md shadow-yellow-500/20"
+                  : "bg-[#1a1a1a] text-[#ababab] hover:text-white border border-[#2e2e2e]"
                   }`}
                 onClick={() => setActiveTab(tab)}
               >
@@ -64,6 +65,7 @@ const Dashboard = () => {
 
       {activeTab === "Metrics" && <Metrics />}
       {activeTab === "Orders" && <RecentOrders />}
+      {activeTab === "Accounting" && <Accounting />}
       {activeTab === "Shift Handovers" && <ShiftHandoversAdmin />}
 
       {modalType && (

@@ -14,10 +14,11 @@ import { BiSolidDish } from "react-icons/bi";
 import { useNavigate, useLocation } from "react-router-dom";
 import Modal from "./Modal";
 import { useDispatch, useSelector } from "react-redux";
-import { setCustomer } from "../../redux/slices/customerSlice";
+import { setCustomer, updateTable } from "../../redux/slices/customerSlice";
 import { removeUser } from "../../redux/slices/userSlice";
 import { logout } from "../../https";
 import ShiftHandoverModal from "./ShiftHandoverModal";
+import { enqueueSnackbar } from "notistack";
 
 const BottomNav = () => {
   const navigate = useNavigate();
@@ -31,6 +32,8 @@ const BottomNav = () => {
   const [guestCount, setGuestCount] = useState(0);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [orderType, setOrderType] = useState("Dine In");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
 
   const moreRef = useRef(null);
 
@@ -64,8 +67,39 @@ const BottomNav = () => {
   const isActive = (path) => location.pathname === path;
 
   const handleCreateOrder = () => {
-    dispatch(setCustomer({ name, phone, guests: guestCount }));
-    navigate("/tables");
+    if (!name.trim()) {
+      enqueueSnackbar("Please enter customer name!", { variant: "warning" });
+      return;
+    }
+    if (orderType === "Delivery" && !deliveryAddress.trim()) {
+      enqueueSnackbar("Please enter a delivery address!", { variant: "warning" });
+      return;
+    }
+
+    dispatch(
+      setCustomer({
+        name: name.trim(),
+        phone,
+        guests: orderType === "Dine In" ? guestCount : 0,
+        orderType,
+        deliveryAddress: orderType === "Delivery" ? deliveryAddress.trim() : "",
+      })
+    );
+
+    if (orderType === "Dine In") {
+      closeModal();
+      navigate("/tables");
+    } else {
+      dispatch(updateTable({ table: null }));
+      closeModal();
+      navigate("/menu");
+    }
+
+    setName("");
+    setPhone("");
+    setGuestCount(0);
+    setDeliveryAddress("");
+    setOrderType("Dine In");
   };
 
   const handleLogout = async () => {
@@ -85,25 +119,22 @@ const BottomNav = () => {
     <div className="fixed bottom-0 left-0 right-0 bg-[#262626] p-2 h-16 flex justify-around">
       <button
         onClick={() => navigate("/")}
-        className={`flex items-center justify-center font-bold ${
-          isActive("/") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
-        } w-[300px] rounded-[20px]`}
+        className={`flex items-center justify-center font-bold ${isActive("/") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
+          } w-[300px] rounded-[20px]`}
       >
         <FaHome className="inline mr-2" size={20} /> <p>Home</p>
       </button>
       <button
         onClick={() => navigate("/orders")}
-        className={`flex items-center justify-center font-bold ${
-          isActive("/orders") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
-        } w-[300px] rounded-[20px]`}
+        className={`flex items-center justify-center font-bold ${isActive("/orders") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
+          } w-[300px] rounded-[20px]`}
       >
         <FaList className="inline mr-2" size={18} /> <p>Orders</p>
       </button>
       <button
         onClick={() => navigate("/tables")}
-        className={`flex items-center justify-center font-bold ${
-          isActive("/tables") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
-        } w-[300px] rounded-[20px]`}
+        className={`flex items-center justify-center font-bold ${isActive("/tables") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
+          } w-[300px] rounded-[20px]`}
       >
         <FaTable className="inline mr-2" size={18} /> <p>Tables</p>
       </button>
@@ -111,11 +142,10 @@ const BottomNav = () => {
         <button
           type="button"
           onClick={() => setIsMoreOpen((prev) => !prev)}
-          className={`flex items-center justify-center font-bold w-full rounded-[20px] transition-colors cursor-pointer ${
-            isMoreOpen || isActive("/dashboard")
+          className={`flex items-center justify-center font-bold w-full rounded-[20px] transition-colors cursor-pointer ${isMoreOpen || isActive("/dashboard")
               ? "text-[#f5f5f5] bg-[#343434]"
               : "text-[#ababab] hover:text-white"
-          }`}
+            }`}
         >
           <FaEllipsisH className="inline mr-2" size={18} /> <p>More</p>
         </button>
@@ -220,27 +250,61 @@ const BottomNav = () => {
 
       <Modal isOpen={isModalOpen} onClose={closeModal} title="Create Order">
         <div>
+          <label className="block text-[#ababab] mb-2 text-sm font-medium">Order Type</label>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {["Dine In", "Takeout", "Delivery"].map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setOrderType(type)}
+                className={`py-2.5 rounded-lg text-sm font-semibold transition-colors ${orderType === type
+                    ? "bg-[#F6B100] text-[#1f1f1f]"
+                    : "bg-[#1f1f1f] text-[#ababab] hover:text-white border border-[#333]"
+                  }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
           <label className="block text-[#ababab] mb-2 text-sm font-medium">Customer Name</label>
           <div className="flex items-center rounded-lg p-3 px-4 bg-[#1f1f1f]">
-            <input value={name} onChange={(e) => setName(e.target.value)} type="text" name="" placeholder="Enter customer name" id="" className="bg-transparent flex-1 text-white focus:outline-none"  />
+            <input value={name} onChange={(e) => setName(e.target.value)} type="text" placeholder="Enter customer name" className="bg-transparent flex-1 text-white focus:outline-none" />
           </div>
         </div>
         <div>
           <label className="block text-[#ababab] mb-2 mt-3 text-sm font-medium">Customer Phone</label>
           <div className="flex items-center rounded-lg p-3 px-4 bg-[#1f1f1f]">
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} type="number" name="" placeholder="0241234567" id="" className="bg-transparent flex-1 text-white focus:outline-none"  />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="0241234567" className="bg-transparent flex-1 text-white focus:outline-none" />
           </div>
         </div>
-        <div>
-          <label className="block mb-2 mt-3 text-sm font-medium text-[#ababab]">Guest</label>
-          <div className="flex items-center justify-between bg-[#1f1f1f] px-4 py-3 rounded-lg">
-            <button onClick={decrement} className="text-yellow-500 text-2xl">&minus;</button>
-            <span className="text-white">{guestCount} Person</span>
-            <button onClick={increment} className="text-yellow-500 text-2xl">&#43;</button>
+        {orderType === "Dine In" && (
+          <div>
+            <label className="block mb-2 mt-3 text-sm font-medium text-[#ababab]">Guest</label>
+            <div className="flex items-center justify-between bg-[#1f1f1f] px-4 py-3 rounded-lg">
+              <button type="button" onClick={decrement} className="text-yellow-500 text-2xl">&minus;</button>
+              <span className="text-white">{guestCount} Person</span>
+              <button type="button" onClick={increment} className="text-yellow-500 text-2xl">&#43;</button>
+            </div>
           </div>
-        </div>
-        <button onClick={handleCreateOrder} className="w-full bg-[#F6B100] text-[#f5f5f5] rounded-lg py-3 mt-8 hover:bg-yellow-700">
-          Create Order
+        )}
+        {orderType === "Delivery" && (
+          <div>
+            <label className="block mb-2 mt-3 text-sm font-medium text-[#ababab]">Delivery Address</label>
+            <div className="flex items-center rounded-lg p-3 px-4 bg-[#1f1f1f]">
+              <input
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                type="text"
+                placeholder="e.g. East Legon, Near Anc Mall"
+                className="bg-transparent flex-1 text-white focus:outline-none"
+              />
+            </div>
+          </div>
+        )}
+        <button type="button" onClick={handleCreateOrder} className="w-full bg-[#F6B100] text-[#1f1f1f] font-bold rounded-lg py-3 mt-8 hover:bg-yellow-500 transition-colors">
+          {orderType === "Dine In" ? "Select Table" : `Continue to Menu (${orderType})`}
         </button>
       </Modal>
 

@@ -19,13 +19,28 @@ const OrderCard = ({ order }) => {
               {order.customerDetails?.name || "Walk-in Guest"}
             </h1>
             <p className="text-[#ababab] text-xs">
-              #{Math.floor(new Date(order.orderDate).getTime()).toString().slice(-6)} / Dine in
+              #{Math.floor(new Date(order.orderDate).getTime()).toString().slice(-6)} /{" "}
+              {order.customerDetails?.orderType || (order.table?.tableNo ? "Dine In" : "Takeout")}
             </p>
             <p className="text-[#ababab] text-xs">
-              Table <FaLongArrowAltRight className="text-[#ababab] mx-1 inline" />{" "}
-              <span className="font-bold text-white">
-                {order.table?.tableNo ? `Table ${order.table.tableNo}` : "Takeaway"}
-              </span>
+              {order.table?.tableNo ? (
+                <>
+                  Table <FaLongArrowAltRight className="text-[#ababab] mx-1 inline" />{" "}
+                  <span className="font-bold text-white">Table {order.table.tableNo}</span>
+                </>
+              ) : order.customerDetails?.orderType === "Delivery" ? (
+                <>
+                  Delivery <FaLongArrowAltRight className="text-[#ababab] mx-1 inline" />{" "}
+                  <span className="font-bold text-yellow-400">
+                    {order.customerDetails?.deliveryAddress || "Address provided"}
+                  </span>
+                </>
+              ) : (
+                <>
+                  Type <FaLongArrowAltRight className="text-[#ababab] mx-1 inline" />{" "}
+                  <span className="font-bold text-yellow-400">Takeout</span>
+                </>
+              )}
             </p>
 
             {/* Waiter Attribution Badge */}
@@ -69,11 +84,10 @@ const OrderCard = ({ order }) => {
 
             {/* Payment Method Badge */}
             <span
-              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                order.paymentMethod === "Cash"
+              className={`px-2 py-0.5 rounded text-[10px] font-bold ${order.paymentMethod === "Cash"
                   ? "bg-yellow-900/30 text-yellow-400 border border-yellow-700/30"
                   : "bg-blue-900/30 text-blue-400 border border-blue-700/30"
-              }`}
+                }`}
             >
               {order.paymentMethod || "Cash"}
             </span>

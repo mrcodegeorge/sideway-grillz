@@ -13,8 +13,13 @@ const CustomerInfo = () => {
           {customerData.customerName || "Customer Name"}
         </h1>
         <p className="text-xs text-[#ababab] font-medium mt-1">
-          #{customerData.orderId || "N/A"} / Dine in
+          #{customerData.orderId || "N/A"} / {customerData.orderType || "Dine In"}
         </p>
+        {customerData.orderType === "Delivery" && customerData.deliveryAddress && (
+          <p className="text-xs text-yellow-400/90 font-medium mt-1 max-w-[220px] truncate" title={customerData.deliveryAddress}>
+            Addr: {customerData.deliveryAddress}
+          </p>
+        )}
         <p className="text-xs text-[#ababab] font-medium mt-2">
           {formatDate(dateTime)}
         </p>
