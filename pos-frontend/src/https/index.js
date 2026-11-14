@@ -13,6 +13,7 @@ import {
   getLocalAgentOrders,
   saveOrderToLocalAgent,
 } from "../utils/localSyncAgent";
+import { logAuditEvent } from "../utils/auditStorage";
 
 const isNetworkError = (err) => {
   if (!navigator.onLine) return true;
@@ -136,6 +137,16 @@ export const login = async ({ username, email, pin, password }) => {
     phone: profile?.phone || authData.user.user_metadata?.phone || "",
     role: (profile?.role || authData.user.user_metadata?.role || "waiter").toLowerCase(),
   };
+
+  logAuditEvent({
+    action: "LOGIN",
+    entityType: "Auth",
+    entityId: user.id,
+    actorId: user.id,
+    actorName: user.name,
+    actorRole: user.role,
+    details: `${user.name} (${user.role}) signed in`,
+  });
 
   return {
     data: {
@@ -492,6 +503,15 @@ export const addOrder = async (orderData) => {
         .eq("id", orderData.table);
     }
 
+    logAuditEvent({
+      action: "ORDER_CREATED",
+      entityType: "Order",
+      entityId: data.id,
+      details: `Created order for ${orderData.customerDetails?.name || "Walk-in"} • GH₵ ${Number(
+        orderData.bills?.totalWithTax ?? orderData.bills?.total ?? 0
+      ).toFixed(2)} (${orderData.paymentMethod || "Cash"})`,
+    });
+
     return {
       data: {
         success: true,
@@ -670,6 +690,13 @@ export const updateOrderStatus = async ({ orderId, orderStatus }) => {
         .eq("id", data.table_id);
     }
   }
+
+  logAuditEvent({
+    action: "ORDER_STATUS_UPDATED",
+    entityType: "Order",
+    entityId: data.id,
+    details: `Order ${String(data.id).slice(0, 8)} status changed to ${orderStatus}`,
+  });
 
   return {
     data: {

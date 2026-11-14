@@ -10,6 +10,7 @@ import IncidentsAdmin from "../components/dashboard/IncidentsAdmin";
 import UsersAdmin from "../components/dashboard/UsersAdmin";
 import CustomersAdmin from "../components/dashboard/CustomersAdmin";
 import SettingsAdmin from "../components/dashboard/SettingsAdmin";
+import AuditTrailsAdmin from "../components/dashboard/AuditTrailsAdmin";
 
 const buttons = [
   { label: "Add Table", icon: <FaTable />, action: "table" },
@@ -17,7 +18,7 @@ const buttons = [
   { label: "Add Dishes", icon: <BiSolidDish />, action: "dishes" },
 ];
 
-const tabs = ["Metrics", "Orders", "Accounting", "Customers", "Incidents", "Users", "Shift Handovers", "Settings"];
+const tabs = ["Metrics", "Orders", "Accounting", "Customers", "Incidents", "Users", "Shift Handovers", "Audit Trails", "Settings"];
 
 const Dashboard = () => {
   useEffect(() => {
@@ -33,8 +34,8 @@ const Dashboard = () => {
 
   return (
     <div className="bg-[#1f1f1f] min-h-[calc(100vh-5rem)]">
-      <div className="container mx-auto flex items-center justify-between py-8 px-6 md:px-4">
-        <div className="flex items-center gap-3">
+      <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 py-8 px-6 md:px-4">
+        <div className="flex flex-wrap items-center gap-3">
           {buttons.map(({ label, icon, action }) => {
             return (
               <button
@@ -48,7 +49,7 @@ const Dashboard = () => {
           })}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
@@ -74,6 +75,7 @@ const Dashboard = () => {
       {activeTab === "Incidents" && <IncidentsAdmin />}
       {activeTab === "Users" && <UsersAdmin />}
       {activeTab === "Shift Handovers" && <ShiftHandoversAdmin />}
+      {activeTab === "Audit Trails" && <AuditTrailsAdmin />}
       {activeTab === "Settings" && <SettingsAdmin />}
 
       {modalType && (
