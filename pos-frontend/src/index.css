@@ -4,8 +4,88 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark light;
+  --surface: light-dark(#f4f4f6, #1f1f1f);
+  --surface-elevated: light-dark(#ffffff, #1a1a1a);
+  --surface-subtle: light-dark(#e9eaee, #262626);
+  --text-primary: light-dark(#18181b, #f5f5f5);
+  --text-muted: light-dark(#52525b, #ababab);
+  --border-subtle: light-dark(#d4d4d8, #2a2a2a);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
 body {
   font-family: 'Inter', sans-serif;
+  background-color: var(--surface);
+  color: var(--text-primary);
+}
+
+/* Light Mode semantic surface, text, and border mappings */
+:root[data-theme='light'] body,
+:root[data-theme='light'] .bg-\[\#1f1f1f\],
+:root[data-theme='light'] .bg-\[\#121212\],
+:root[data-theme='light'] .bg-\[\#141414\] {
+  background-color: #f4f4f6 !important;
+}
+
+:root[data-theme='light'] .bg-\[\#1a1a1a\],
+:root[data-theme='light'] .bg-\[\#1d1d1d\],
+:root[data-theme='light'] .bg-\[\#222\] {
+  background-color: #ffffff !important;
+}
+
+:root[data-theme='light'] .bg-\[\#242424\],
+:root[data-theme='light'] .bg-\[\#252525\],
+:root[data-theme='light'] .bg-\[\#262626\],
+:root[data-theme='light'] .bg-\[\#2a2a2a\],
+:root[data-theme='light'] .bg-\[\#2e2e2e\],
+:root[data-theme='light'] .bg-\[\#383838\] {
+  background-color: #e4e4e7 !important;
+}
+
+:root[data-theme='light'] .text-\[\#f5f5f5\],
+:root[data-theme='light'] .text-\[\#ccc\] {
+  color: #18181b !important;
+}
+
+:root[data-theme='light'] .text-\[\#ababab\],
+:root[data-theme='light'] .text-\[\#aaa\],
+:root[data-theme='light'] .text-\[\#999\],
+:root[data-theme='light'] .text-\[\#888\] {
+  color: #52525b !important;
+}
+
+:root[data-theme='light'] .border-\[\#2a2a2a\],
+:root[data-theme='light'] .border-\[\#2e2e2e\],
+:root[data-theme='light'] .border-\[\#2f2f2f\],
+:root[data-theme='light'] .border-\[\#333\],
+:root[data-theme='light'] .border-\[\#3a3a3a\] {
+  border-color: #d4d4d8 !important;
+}
+
+:root[data-theme='light'] .hover\:bg-\[\#2a2a2a\]:hover,
+:root[data-theme='light'] .hover\:bg-\[\#2c2c2c\]:hover,
+:root[data-theme='light'] .hover\:bg-\[\#232323\]:hover,
+:root[data-theme='light'] .hover\:bg-\[\#303030\]:hover,
+:root[data-theme='light'] .hover\:bg-\[\#323232\]:hover {
+  background-color: #e4e4e7 !important;
+}
+
+:root[data-theme='light'] .text-yellow-400 {
+  color: #b45309 !important;
+}
+
+:root[data-theme='light'] .bg-yellow-400 {
+  background-color: #facc15 !important;
+  color: #18181b !important;
 }
 
 /* FullScreenLoader.css */
@@ -16,16 +96,17 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #1f1f1f; /* White background with some transparency */
+  background-color: var(--surface);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999; /* Ensure it's on top of other content */
+  z-index: 9999;
+  /* Ensure it's on top of other content */
 }
 
 .spinner {
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top: 4px solid #f6b100; /* Blue color for spinner */
+  border: 4px solid rgba(128, 128, 128, 0.3);
+  border-top: 4px solid #f6b100;
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -33,6 +114,11 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }

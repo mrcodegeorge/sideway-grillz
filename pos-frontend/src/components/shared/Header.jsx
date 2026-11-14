@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FaSearch, FaUserCircle, FaBell, FaSignOutAlt, FaTachometerAlt, FaDatabase, FaCheckDouble, FaExclamationTriangle, FaUtensils, FaWifi } from "react-icons/fa";
+import { FaSearch, FaUserCircle, FaBell, FaSignOutAlt, FaTachometerAlt, FaDatabase, FaCheckDouble, FaExclamationTriangle, FaUtensils, FaWifi, FaSun, FaMoon } from "react-icons/fa";
 import logo from "../../assets/images/logo.png";
 import { useDispatch, useSelector } from "react-redux";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import LocalSyncModal from "./LocalSyncModal";
 import { getLocalAgentStatus } from "../../utils/localSyncAgent";
 import { getOfflineOrders } from "../../utils/offlineQueue";
 import { getIncidents } from "../../utils/incidentsStorage";
+import { getTheme, toggleTheme } from "../../utils/theme";
 
 const Header = () => {
   const userData = useSelector((state) => state.user);
@@ -23,7 +24,12 @@ const Header = () => {
   const [dismissedIds, setDismissedIds] = useState([]);
   const [agentRunning, setAgentRunning] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [theme, setTheme] = useState(() => getTheme());
   const bellWrapperRef = useRef(null);
+
+  const handleToggleTheme = () => {
+    setTheme(toggleTheme());
+  };
 
   const isAdmin = (userData.role || "").toLowerCase() === "admin";
 
@@ -186,6 +192,18 @@ const Header = () => {
 
         {/* LOGGED USER CONTROLS */}
         <div className="flex items-center gap-4">
+          {/* Light / Dark Mode Toggle */}
+          <button
+            type="button"
+            onClick={handleToggleTheme}
+            aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+            aria-pressed={theme === "light"}
+            title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
+            className="bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#333] rounded-xl p-2.5 cursor-pointer text-yellow-400 transition-colors"
+          >
+            {theme === "light" ? <FaMoon size={16} /> : <FaSun size={16} />}
+          </button>
+
           {/* Local DB & Sync Agent Button */}
           <button
             type="button"

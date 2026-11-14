@@ -520,14 +520,28 @@ export const addOrder = async (orderData) => {
   }
 };
 
-const fallbackOrders = async (pendingOffline) => {
+const filterOrdersForUser = (orders, session) => {
+  const user = session?.user;
+  if (!user) return orders;
+  const role = (user.user_metadata?.role || "").toLowerCase();
+  if (role === "admin") return orders;
+
+  const userName = (user.user_metadata?.name || user.user_metadata?.username || "").toLowerCase();
+  return orders.filter(
+    (o) =>
+      o.waiterId === user.id ||
+      (!o.waiterId && userName && (o.waiterName || "").toLowerCase() === userName)
+  );
+};
+
+const fallbackOrders = async (pendingOffline, session) => {
   try {
     const agentRes = await getLocalAgentOrders();
     if (agentRes?.data) {
       return {
         data: {
           success: true,
-          data: [...pendingOffline, ...agentRes.data],
+          data: filterOrdersForUser([...pendingOffline, ...agentRes.data], session),
         },
       };
     }
@@ -537,20 +551,27 @@ const fallbackOrders = async (pendingOffline) => {
   return {
     data: {
       success: true,
-      data: [...pendingOffline, ...getCachedOrders()],
+      data: filterOrdersForUser([...pendingOffline, ...getCachedOrders()], session),
     },
   };
 };
 
 export const getOrders = async () => {
   const pendingOffline = getOfflineOrders();
+  let session = null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    session = data?.session || null;
+  } catch {
+    // offline or session unavailable
+  }
 
   if (!navigator.onLine) {
-    return fallbackOrders(pendingOffline);
+    return fallbackOrders(pendingOffline, session);
   }
 
   try {
-    const { data: orders, error } = await supabase
+    let query = supabase
       .from("orders")
       .select(`
         id,
@@ -572,9 +593,16 @@ export const getOrders = async () => {
       `)
       .order("created_at", { ascending: false });
 
+    const role = (session?.user?.user_metadata?.role || "").toLowerCase();
+    if (session?.user && role !== "admin") {
+      query = query.eq("waiter_id", session.user.id);
+    }
+
+    const { data: orders, error } = await query;
+
     if (error) {
       if (isNetworkError(error)) {
-        return fallbackOrders(pendingOffline);
+        return fallbackOrders(pendingOffline, session);
       }
       throw { response: { data: { message: error.message } } };
     }
@@ -607,12 +635,12 @@ export const getOrders = async () => {
     return {
       data: {
         success: true,
-        data: [...pendingOffline, ...formattedOrders],
+        data: filterOrdersForUser([...pendingOffline, ...formattedOrders], session),
       },
     };
   } catch (err) {
     if (isNetworkError(err)) {
-      return fallbackOrders(pendingOffline);
+      return fallbackOrders(pendingOffline, session);
     }
     throw err;
   }
