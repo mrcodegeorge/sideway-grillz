@@ -87,9 +87,16 @@ const MenuContainer = () => {
           return (
             <div
               key={item.id}
-              className="flex flex-col items-start justify-between p-4 rounded-lg h-[150px] cursor-pointer hover:bg-[#2a2a2a] bg-[#1a1a1a]"
+              className="flex flex-col items-start justify-between p-4 rounded-lg min-h-[150px] cursor-pointer hover:bg-[#2a2a2a] bg-[#1a1a1a]"
             >
-              <div className="flex items-start justify-between w-full">
+              {item.image && (
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-full h-24 object-cover rounded-md mb-2"
+                />
+              )}
+              <div className="flex items-start justify-between w-full gap-2">
                 <h1 className="text-[#f5f5f5] text-lg font-semibold">
                   {item.name}
                 </h1>

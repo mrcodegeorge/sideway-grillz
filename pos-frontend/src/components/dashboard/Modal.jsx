@@ -1,10 +1,41 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { FaTimes } from "react-icons/fa";
+import { FaTimes, FaImage, FaTrash } from "react-icons/fa";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addTable } from "../../https";
 import { enqueueSnackbar } from "notistack";
 import { getMenus, addCategory, addDish } from "../../utils/menuStorage";
+
+const compressMenuImage = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Failed to read image"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Invalid image file"));
+      img.onload = () => {
+        const maxDim = 480;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width >= height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.78));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
 
 const CATEGORY_ICONS = ["🍖", "🍔", "🍗", "🥗", "🍹", "🍰", "🍲", "🍕", "🔥", "🍽️"];
 const CATEGORY_COLORS = [
@@ -39,7 +70,23 @@ const Modal = ({ modalType = "table", onClose, setIsTableModalOpen }) => {
     name: "",
     price: "",
     categoryType: "Non-Veg",
+    image: "",
   });
+
+  const handleDishImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      enqueueSnackbar("Please select a valid image file.", { variant: "warning" });
+      return;
+    }
+    try {
+      const compressed = await compressMenuImage(file);
+      setDishData((prev) => ({ ...prev, image: compressed }));
+    } catch {
+      enqueueSnackbar("Could not process image.", { variant: "error" });
+    }
+  };
 
   const handleCloseModal = () => {
     if (onClose) onClose();
@@ -97,7 +144,7 @@ const Modal = ({ modalType = "table", onClose, setIsTableModalOpen }) => {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
         transition={{ duration: 0.25, ease: "easeInOut" }}
-        className="bg-[#262626] border border-[#383838] p-6 rounded-xl shadow-2xl w-full max-w-md"
+        className="bg-[#262626] border border-[#383838] p-6 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-[#f5f5f5] text-xl font-bold">
@@ -300,6 +347,42 @@ const Modal = ({ modalType = "table", onClose, setIsTableModalOpen }) => {
                     <option value="Veg">Veg</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[#ababab] mb-2 text-sm font-medium">
+                  Dish Image (Optional)
+                </label>
+                {dishData.image ? (
+                  <div className="relative rounded-xl overflow-hidden border border-[#333] bg-[#1f1f1f]">
+                    <img
+                      src={dishData.image}
+                      alt="Dish preview"
+                      className="w-full h-36 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setDishData((prev) => ({ ...prev, image: "" }))}
+                      className="absolute top-2 right-2 bg-black/75 hover:bg-red-600 text-white p-2 rounded-lg text-xs flex items-center gap-1 cursor-pointer"
+                    >
+                      <FaTrash size={11} />
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-1.5 rounded-xl p-4 bg-[#1f1f1f] border border-dashed border-[#444] hover:border-yellow-400/60 cursor-pointer transition-colors">
+                    <FaImage className="text-yellow-400" size={20} />
+                    <span className="text-xs text-[#ccc] font-medium">
+                      Click to upload dish photo (JPG, PNG, WebP)
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleDishImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
             </>
           )}

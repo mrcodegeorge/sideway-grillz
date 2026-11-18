@@ -22,13 +22,14 @@ const saveMenus = (updatedMenus) => {
   window.dispatchEvent(new Event("menus-updated"));
 };
 
-export const addCategory = ({ name, icon, bgColor }) => {
+export const addCategory = ({ name, icon, bgColor, image }) => {
   const current = getMenus();
   const newCategory = {
     id: Date.now(),
     name: name.trim(),
     icon: icon || "🍽️",
     bgColor: bgColor || "#5b45b0",
+    image: image || "",
     items: [],
   };
   const updated = [...current, newCategory];
@@ -36,7 +37,7 @@ export const addCategory = ({ name, icon, bgColor }) => {
   return newCategory;
 };
 
-export const addDish = ({ categoryId, name, price, categoryType }) => {
+export const addDish = ({ categoryId, name, price, categoryType, image }) => {
   const current = getMenus();
   const targetId = Number(categoryId);
   const newDish = {
@@ -44,6 +45,7 @@ export const addDish = ({ categoryId, name, price, categoryType }) => {
     name: name.trim(),
     price: Number(price),
     category: categoryType || "Non-Veg",
+    image: image || "",
   };
 
   const updated = current.map((cat) => {
