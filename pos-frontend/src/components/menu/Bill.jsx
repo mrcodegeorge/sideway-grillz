@@ -260,6 +260,7 @@ const Bill = () => {
       enqueueSnackbar("Order Placed Successfully!", {
         variant: "success",
       });
+      setPaymentMethod(undefined);
       setShowInvoice(true);
     },
     onError: (error) => {

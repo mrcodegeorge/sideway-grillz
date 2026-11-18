@@ -28,14 +28,23 @@ const Menu = () => {
             </h1>
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("open-create-order-modal"))}
+              className="px-3 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-black text-xs font-bold cursor-pointer transition-colors"
+            >
+              + New Client / Order
+            </button>
             <div className="flex items-center gap-2.5 sm:gap-3 cursor-pointer">
               <FaUtensils className="text-[#f5f5f5] text-2xl sm:text-4xl" />
               <div className="flex flex-col items-start">
                 <h1 className="text-sm sm:text-md text-[#f5f5f5] font-semibold tracking-wide">
-                  {customerData.customerName || "Customer Name"}
+                  {customerData.customerName || "Walk-in / Select Client"}
                 </h1>
                 <p className="text-xs text-[#ababab] font-medium">
-                  Table : {customerData.table?.tableNo || "N/A"}
+                  {customerData.orderType === "Dine In"
+                    ? `Table : ${customerData.table?.tableNo || "N/A"}`
+                    : customerData.orderType || "POS"}
                 </p>
               </div>
             </div>

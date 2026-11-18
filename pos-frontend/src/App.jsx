@@ -66,7 +66,24 @@ function Layout() {
             </ProtectedRoutes>
           }
         />
-        <Route path="/auth" element={isAuth ? <Navigate to={normalizedRole === "rider" ? "/rider" : "/"} /> : <Auth />} />
+        <Route
+          path="/auth"
+          element={
+            isAuth ? (
+              <Navigate
+                to={
+                  normalizedRole === "rider"
+                    ? "/rider"
+                    : normalizedRole === "waiter"
+                    ? "/menu"
+                    : "/"
+                }
+              />
+            ) : (
+              <Auth />
+            )
+          }
+        />
         <Route
           path="/rider"
           element={

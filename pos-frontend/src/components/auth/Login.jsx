@@ -146,7 +146,17 @@ const Login = () => {
       enqueueSnackbar(`Welcome back, ${name || username}! (${role})`, {
         variant: "success",
       });
-      navigate("/");
+      const normalizedRole = (role || "").toLowerCase();
+      if (normalizedRole === "rider") {
+        navigate("/rider");
+      } else if (normalizedRole === "waiter") {
+        navigate("/menu");
+        setTimeout(() => {
+          window.dispatchEvent(new Event("open-create-order-modal"));
+        }, 150);
+      } else {
+        navigate("/");
+      }
     },
     onError: (error) => {
       const message =

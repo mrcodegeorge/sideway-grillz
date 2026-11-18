@@ -103,6 +103,12 @@ const BottomNav = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  useEffect(() => {
+    const handleOpenCreateOrder = () => setIsModalOpen(true);
+    window.addEventListener("open-create-order-modal", handleOpenCreateOrder);
+    return () => window.removeEventListener("open-create-order-modal", handleOpenCreateOrder);
+  }, []);
+
   // Close more menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
