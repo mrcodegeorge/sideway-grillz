@@ -159,19 +159,19 @@ const Header = () => {
 
   return (
     <>
-      <header className="flex justify-between items-center py-4 px-8 bg-[#1a1a1a] border-b border-[#2a2a2a]">
+      <header className="flex flex-wrap justify-between items-center gap-3 py-3 sm:py-4 px-3 sm:px-6 lg:px-8 bg-[#1a1a1a] border-b border-[#2a2a2a]">
         {/* LOGO */}
         <div
           onClick={() => navigate("/")}
-          className="flex items-center gap-3 cursor-pointer select-none"
+          className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none"
         >
           <img
             src={logo}
-            className="h-10 w-10 object-contain rounded-lg border border-[#333] bg-black/40 p-0.5"
+            className="h-9 w-9 sm:h-10 sm:w-10 object-contain rounded-lg border border-[#333] bg-black/40 p-0.5"
             alt="Sideways Grillz logo"
           />
           <div>
-            <h1 className="text-xl font-bold text-yellow-400 tracking-wide leading-none">
+            <h1 className="text-base sm:text-xl font-bold text-yellow-400 tracking-wide leading-none">
               Sideways Grillz
             </h1>
             <p className="text-[10px] text-[#888] font-medium tracking-wider uppercase mt-0.5">
@@ -181,8 +181,8 @@ const Header = () => {
         </div>
 
         {/* SEARCH */}
-        <div className="flex items-center gap-4 bg-[#1f1f1f] border border-[#2e2e2e] rounded-xl px-5 py-2 w-[450px]">
-          <FaSearch className="text-[#888]" />
+        <div className="hidden md:flex items-center gap-3 bg-[#1f1f1f] border border-[#2e2e2e] rounded-xl px-4 py-2 w-64 lg:w-[420px]">
+          <FaSearch className="text-[#888] shrink-0" />
           <input
             type="text"
             placeholder="Search dishes, tables, or orders..."
@@ -191,7 +191,7 @@ const Header = () => {
         </div>
 
         {/* LOGGED USER CONTROLS */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
           {/* Light / Dark Mode Toggle */}
           <button
             type="button"
@@ -223,11 +223,11 @@ const Header = () => {
           <button
             type="button"
             onClick={() => setShowShiftModal(true)}
-            className="flex items-center gap-2 bg-[#222] hover:bg-[#2c2c2c] border border-yellow-400/40 text-yellow-400 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-yellow-500/10 cursor-pointer"
+            className="flex items-center gap-2 bg-[#222] hover:bg-[#2c2c2c] border border-yellow-400/40 text-yellow-400 px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-yellow-500/10 cursor-pointer"
             title="Calculate and surrender shift cash"
           >
             <FaMoneyBillWave size={15} />
-            <span>Shift Handover</span>
+            <span className="hidden md:inline">Shift Handover</span>
           </button>
 
           {/* Admin Dashboard Quick Link */}
@@ -257,7 +257,7 @@ const Header = () => {
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-[#1a1a1a] border border-[#2f2f2f] rounded-2xl shadow-2xl z-50 overflow-hidden">
+              <div className="fixed sm:absolute right-3 sm:right-0 left-3 sm:left-auto top-16 sm:top-auto sm:mt-2 sm:w-80 bg-[#1a1a1a] border border-[#2f2f2f] rounded-2xl shadow-2xl z-50 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a]">
                   <span className="text-xs font-bold uppercase tracking-wider text-[#f5f5f5]">
                     Notifications ({notifications.length})
@@ -316,9 +316,9 @@ const Header = () => {
           </div>
 
           {/* User Profile */}
-          <div className="flex items-center gap-3 pl-2 border-l border-[#333]">
-            <FaUserCircle className="text-yellow-400 text-3xl" />
-            <div className="flex flex-col items-start leading-tight">
+          <div className="flex items-center gap-2 sm:gap-3 pl-2 border-l border-[#333]">
+            <FaUserCircle className="text-yellow-400 text-2xl sm:text-3xl shrink-0" />
+            <div className="hidden sm:flex flex-col items-start leading-tight">
               <h2 className="text-sm text-[#f5f5f5] font-bold tracking-wide">
                 {userData.name || userData.username || "Staff"}
               </h2>
@@ -329,10 +329,10 @@ const Header = () => {
             <button
               type="button"
               onClick={handleLogout}
-              className="text-[#888] hover:text-red-400 ml-2 transition-colors cursor-pointer p-1"
+              className="text-[#888] hover:text-red-400 sm:ml-2 transition-colors cursor-pointer p-1"
               title="Sign Out"
             >
-              <FaSignOutAlt size={22} />
+              <FaSignOutAlt size={20} />
             </button>
           </div>
         </div>

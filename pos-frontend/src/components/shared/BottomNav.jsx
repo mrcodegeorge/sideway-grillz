@@ -164,41 +164,41 @@ const BottomNav = () => {
   const isAdmin = (userData.role || "").toLowerCase() === "admin";
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-[#262626] p-2 h-16 flex justify-around">
+    <div className="fixed bottom-0 left-0 right-0 bg-[#262626] px-2 py-1.5 h-16 flex items-center justify-around gap-1 z-40 border-t border-[#333]">
       <button
         data-tour="nav-home"
         onClick={() => navigate("/")}
-        className={`flex items-center justify-center font-bold ${isActive("/") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
-          } w-[300px] rounded-[20px]`}
+        className={`flex-1 min-w-0 h-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 font-bold text-[11px] sm:text-sm ${isActive("/") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
+          } rounded-[20px] px-1`}
       >
-        <FaHome className="inline mr-2" size={20} /> <p>Home</p>
+        <FaHome size={18} /> <span className="truncate">Home</span>
       </button>
       <button
         data-tour="nav-orders"
         onClick={() => navigate("/orders")}
-        className={`flex items-center justify-center font-bold ${isActive("/orders") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
-          } w-[300px] rounded-[20px]`}
+        className={`flex-1 min-w-0 h-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 font-bold text-[11px] sm:text-sm ${isActive("/orders") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
+          } rounded-[20px] px-1`}
       >
-        <FaList className="inline mr-2" size={18} /> <p>Orders</p>
+        <FaList size={16} /> <span className="truncate">Orders</span>
       </button>
       <button
         data-tour="nav-tables"
         onClick={() => navigate("/tables")}
-        className={`flex items-center justify-center font-bold ${isActive("/tables") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
-          } w-[300px] rounded-[20px]`}
+        className={`flex-1 min-w-0 h-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 font-bold text-[11px] sm:text-sm ${isActive("/tables") ? "text-[#f5f5f5] bg-[#343434]" : "text-[#ababab]"
+          } rounded-[20px] px-1`}
       >
-        <FaTable className="inline mr-2" size={18} /> <p>Tables</p>
+        <FaTable size={16} /> <span className="truncate">Tables</span>
       </button>
-      <div className="relative flex justify-center w-[300px]" ref={moreRef} data-tour="nav-more">
+      <div className="relative flex-1 min-w-0 h-full flex justify-center" ref={moreRef} data-tour="nav-more">
         <button
           type="button"
           onClick={() => setIsMoreOpen((prev) => !prev)}
-          className={`flex items-center justify-center font-bold w-full rounded-[20px] transition-colors cursor-pointer ${isMoreOpen || isActive("/dashboard")
+          className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 font-bold text-[11px] sm:text-sm w-full h-full rounded-[20px] px-1 transition-colors cursor-pointer ${isMoreOpen || isActive("/dashboard")
             ? "text-[#f5f5f5] bg-[#343434]"
             : "text-[#ababab] hover:text-white"
             }`}
         >
-          <FaEllipsisH className="inline mr-2" size={18} /> <p>More</p>
+          <FaEllipsisH size={16} /> <span className="truncate">More</span>
         </button>
 
         {isMoreOpen && (

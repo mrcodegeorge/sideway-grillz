@@ -82,9 +82,9 @@ const Auth = () => {
   }, [])
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex flex-col lg:flex-row min-h-screen w-full">
       {/* Left Section */}
-      <div className="w-1/2 relative flex items-center justify-center bg-cover">
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center bg-cover">
         {/* BG Image */}
         <img className="w-full h-full object-cover transition-opacity duration-500" src={slide.image} alt="Sideways Grillz" />
 
@@ -100,7 +100,7 @@ const Auth = () => {
       </div>
 
       {/* Right Section */}
-      <div className="w-1/2 min-h-screen bg-[#1a1a1a] p-10">
+      <div className="w-full lg:w-1/2 min-h-screen bg-[#1a1a1a] p-6 sm:p-10 flex flex-col justify-center">
         <div className="flex flex-col items-center gap-2">
           <img src={logo} alt="Sideways Grillz Logo" className="h-16 w-16 object-contain rounded-xl border border-yellow-400/30 p-1 bg-black/40 shadow-lg" />
           <h1 className="text-2xl font-bold text-yellow-400 tracking-wide">Sideways Grillz</h1>

@@ -51,7 +51,7 @@ const MenuContainer = () => {
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-4 px-10 py-4 w-[100%]">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 px-4 sm:px-8 lg:px-10 py-4 w-full">
         {menus.map((menu) => {
           return (
             <div
@@ -82,7 +82,7 @@ const MenuContainer = () => {
 
       <hr className="border-[#2a2a2a] border-t-2 mt-4" />
 
-      <div className="grid grid-cols-4 gap-4 px-10 py-4 w-[100%]">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 px-4 sm:px-8 lg:px-10 py-4 w-full">
         {selected?.items.map((item) => {
           return (
             <div
