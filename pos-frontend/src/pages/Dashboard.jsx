@@ -12,6 +12,7 @@ import CustomersAdmin from "../components/dashboard/CustomersAdmin";
 import SettingsAdmin from "../components/dashboard/SettingsAdmin";
 import AuditTrailsAdmin from "../components/dashboard/AuditTrailsAdmin";
 import DeliveryManagement from "../components/dashboard/delivery/DeliveryManagement";
+import MenuAdmin from "../components/dashboard/MenuAdmin";
 
 const buttons = [
   { label: "Add Table", icon: <FaTable />, action: "table" },
@@ -19,7 +20,7 @@ const buttons = [
   { label: "Add Dishes", icon: <BiSolidDish />, action: "dishes" },
 ];
 
-const tabs = ["Metrics", "Orders", "Delivery", "Accounting", "Customers", "Incidents", "Users", "Shift Handovers", "Audit Trails", "Settings"];
+const tabs = ["Metrics", "Orders", "Menu", "Delivery", "Accounting", "Customers", "Incidents", "Users", "Shift Handovers", "Audit Trails", "Settings"];
 
 const Dashboard = () => {
   useEffect(() => {
@@ -71,6 +72,7 @@ const Dashboard = () => {
 
       {activeTab === "Metrics" && <Metrics />}
       {activeTab === "Orders" && <RecentOrders />}
+      {activeTab === "Menu" && <MenuAdmin />}
       {activeTab === "Delivery" && <DeliveryManagement />}
       {activeTab === "Accounting" && <Accounting />}
       {activeTab === "Customers" && <CustomersAdmin />}
