@@ -7,6 +7,13 @@ const initialState = {
     guests: 0,
     orderType: "Dine In",
     deliveryAddress: "",
+    deliveryInstructions: "",
+    deliveryZoneId: null,
+    deliveryZoneName: "",
+    deliveryFee: 0,
+    originalDeliveryFee: 0,
+    feeOverrideReason: "",
+    estimatedDeliveryMinutes: 35,
     table: null
 }
 
@@ -16,13 +23,33 @@ const customerSlice = createSlice({
     initialState,
     reducers: {
         setCustomer: (state, action) => {
-            const { name, phone, guests, orderType, deliveryAddress } = action.payload;
+            const {
+              name,
+              phone,
+              guests,
+              orderType,
+              deliveryAddress,
+              deliveryInstructions,
+              deliveryZoneId,
+              deliveryZoneName,
+              deliveryFee,
+              originalDeliveryFee,
+              feeOverrideReason,
+              estimatedDeliveryMinutes,
+            } = action.payload;
             state.orderId = `${Date.now()}`;
             state.customerName = name;
             state.customerPhone = phone;
             state.guests = guests || 0;
             state.orderType = orderType || "Dine In";
             state.deliveryAddress = deliveryAddress || "";
+            state.deliveryInstructions = deliveryInstructions || "";
+            state.deliveryZoneId = deliveryZoneId || null;
+            state.deliveryZoneName = deliveryZoneName || "";
+            state.deliveryFee = Number(deliveryFee || 0);
+            state.originalDeliveryFee = Number(originalDeliveryFee ?? deliveryFee ?? 0);
+            state.feeOverrideReason = feeOverrideReason || "";
+            state.estimatedDeliveryMinutes = Number(estimatedDeliveryMinutes || 35);
         },
 
         removeCustomer: (state) => {
@@ -31,6 +58,13 @@ const customerSlice = createSlice({
             state.guests = 0;
             state.orderType = "Dine In";
             state.deliveryAddress = "";
+            state.deliveryInstructions = "";
+            state.deliveryZoneId = null;
+            state.deliveryZoneName = "";
+            state.deliveryFee = 0;
+            state.originalDeliveryFee = 0;
+            state.feeOverrideReason = "";
+            state.estimatedDeliveryMinutes = 35;
             state.table = null;
         },
 

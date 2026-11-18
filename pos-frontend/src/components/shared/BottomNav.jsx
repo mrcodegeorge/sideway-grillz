@@ -22,6 +22,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { setCustomer, updateTable } from "../../redux/slices/customerSlice";
 import { removeUser } from "../../redux/slices/userSlice";
 import { adminChangeUserPin, getOrders, logout } from "../../https";
+import { getDeliveryZones } from "../../https/deliveryApi";
+import { matchDeliveryZone } from "../../utils/deliveryZones";
 import { extractCustomersFromOrders } from "../../utils/customersHelper";
 import ShiftHandoverModal from "./ShiftHandoverModal";
 import IncidentReportModal from "./IncidentReportModal";
@@ -48,6 +50,9 @@ const BottomNav = () => {
   const [phone, setPhone] = useState("");
   const [orderType, setOrderType] = useState("Dine In");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryInstructions, setDeliveryInstructions] = useState("");
+  const [manualDeliveryFee, setManualDeliveryFee] = useState("");
+  const [feeOverrideReason, setFeeOverrideReason] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
 
   const { data: ordersRes } = useQuery({
@@ -55,6 +60,17 @@ const BottomNav = () => {
     queryFn: getOrders,
     enabled: isModalOpen,
   });
+
+  const { data: deliveryZones = [] } = useQuery({
+    queryKey: ["delivery-zones"],
+    queryFn: getDeliveryZones,
+    enabled: isModalOpen && orderType === "Delivery",
+  });
+
+  const zoneMatch = React.useMemo(() => {
+    if (orderType !== "Delivery") return { matched: false, zone: null };
+    return matchDeliveryZone({ address: deliveryAddress, zones: deliveryZones });
+  }, [orderType, deliveryAddress, deliveryZones]);
 
   const existingCustomers = React.useMemo(() => {
     const orders = ordersRes?.data?.data || [];
@@ -123,6 +139,19 @@ const BottomNav = () => {
       return;
     }
 
+    const matchedZone = zoneMatch.matched ? zoneMatch.zone : null;
+    const baseFee = matchedZone ? Number(matchedZone.fee || 0) : 0;
+    const hasOverride = manualDeliveryFee !== "" && !Number.isNaN(Number(manualDeliveryFee));
+    const effectiveFee = hasOverride ? Number(manualDeliveryFee) : baseFee;
+
+    if (orderType === "Delivery" && !matchedZone && !hasOverride && deliveryZones.length > 0) {
+      enqueueSnackbar(
+        "Address is outside standard delivery zones. Enter a manual delivery fee quote.",
+        { variant: "warning" }
+      );
+      return;
+    }
+
     dispatch(
       setCustomer({
         name: name.trim(),
@@ -130,6 +159,13 @@ const BottomNav = () => {
         guests: orderType === "Dine In" ? guestCount : 0,
         orderType,
         deliveryAddress: orderType === "Delivery" ? deliveryAddress.trim() : "",
+        deliveryInstructions: orderType === "Delivery" ? deliveryInstructions.trim() : "",
+        deliveryZoneId: matchedZone?.id || null,
+        deliveryZoneName: matchedZone?.name || "",
+        deliveryFee: orderType === "Delivery" ? effectiveFee : 0,
+        originalDeliveryFee: orderType === "Delivery" ? baseFee : 0,
+        feeOverrideReason: hasOverride ? feeOverrideReason.trim() || "Manual quote" : "",
+        estimatedDeliveryMinutes: matchedZone?.estimated_delivery_minutes || 35,
       })
     );
 
@@ -146,6 +182,9 @@ const BottomNav = () => {
     setPhone("");
     setGuestCount(0);
     setDeliveryAddress("");
+    setDeliveryInstructions("");
+    setManualDeliveryFee("");
+    setFeeOverrideReason("");
     setCustomerSearch("");
     setOrderType("Dine In");
   };
@@ -415,16 +454,75 @@ const BottomNav = () => {
           </div>
         )}
         {orderType === "Delivery" && (
-          <div>
-            <label className="block mb-2 mt-3 text-sm font-medium text-[#ababab]">Delivery Address</label>
-            <div className="flex items-center rounded-lg p-3 px-4 bg-[#1f1f1f]">
-              <input
-                value={deliveryAddress}
-                onChange={(e) => setDeliveryAddress(e.target.value)}
-                type="text"
-                placeholder="e.g. East Legon, Near Anc Mall"
-                className="bg-transparent flex-1 text-white focus:outline-none"
-              />
+          <div className="space-y-3 mt-3">
+            <div>
+              <label className="block mb-1.5 text-sm font-medium text-[#ababab]">Delivery Address</label>
+              <div className="flex items-center rounded-lg p-3 px-4 bg-[#1f1f1f]">
+                <input
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  type="text"
+                  placeholder="e.g. East Legon, Near Anc Mall"
+                  className="bg-transparent flex-1 text-white focus:outline-none"
+                />
+              </div>
+              {deliveryAddress.trim() && (
+                <div className="mt-1.5 text-xs">
+                  {zoneMatch.matched ? (
+                    <span className="text-emerald-400 font-semibold">
+                      Matched Zone: {zoneMatch.zone.name} • Fee: GH₵ {Number(zoneMatch.zone.fee).toFixed(2)} • ~{zoneMatch.zone.estimated_delivery_minutes} mins
+                    </span>
+                  ) : (
+                    <span className="text-amber-400 font-medium">
+                      Outside standard coverage — enter manual delivery fee quote below
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block mb-1.5 text-sm font-medium text-[#ababab]">
+                Delivery Instructions (Optional)
+              </label>
+              <div className="flex items-center rounded-lg p-3 px-4 bg-[#1f1f1f]">
+                <input
+                  value={deliveryInstructions}
+                  onChange={(e) => setDeliveryInstructions(e.target.value)}
+                  type="text"
+                  placeholder="e.g. Call on arrival at gate"
+                  className="bg-transparent flex-1 text-white focus:outline-none text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block mb-1 text-xs font-medium text-[#ababab]">
+                  Delivery Fee Override (GH₵)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={manualDeliveryFee}
+                  onChange={(e) => setManualDeliveryFee(e.target.value)}
+                  placeholder={zoneMatch.matched ? String(zoneMatch.zone.fee) : "e.g. 25"}
+                  className="w-full rounded-lg p-2.5 bg-[#1f1f1f] text-white text-xs outline-none border border-[#333]"
+                />
+              </div>
+              <div>
+                <label className="block mb-1 text-xs font-medium text-[#ababab]">
+                  Override Reason
+                </label>
+                <input
+                  type="text"
+                  value={feeOverrideReason}
+                  onChange={(e) => setFeeOverrideReason(e.target.value)}
+                  placeholder="Optional reason"
+                  className="w-full rounded-lg p-2.5 bg-[#1f1f1f] text-white text-xs outline-none border border-[#333]"
+                />
+              </div>
             </div>
           </div>
         )}

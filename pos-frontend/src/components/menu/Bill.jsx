@@ -16,6 +16,7 @@ import {
   SETTINGS_UPDATED_EVENT,
   dispatchOrderSmsIfEnabled,
 } from "../../utils/settingsStorage";
+import { createDeliveryTaskForOrder } from "../../https/deliveryApi";
 
 function loadScript(src) {
   return new Promise((resolve) => {
@@ -50,8 +51,10 @@ const Bill = () => {
     return () => window.removeEventListener(SETTINGS_UPDATED_EVENT, onSettingsUpdated);
   }, []);
 
+  const deliveryFee =
+    customerData.orderType === "Delivery" ? Number(customerData.deliveryFee || 0) : 0;
   const tax = (total * vatRate) / 100;
-  const totalPriceWithTax = total + tax;
+  const totalPriceWithTax = total + tax + deliveryFee;
 
   const [paymentMethod, setPaymentMethod] = useState();
   const [showInvoice, setShowInvoice] = useState(false);
@@ -139,6 +142,7 @@ const Bill = () => {
               bills: {
                 total: total,
                 tax: tax,
+                deliveryFee: deliveryFee,
                 totalWithTax: totalPriceWithTax,
               },
               items: cartData,
@@ -182,6 +186,7 @@ const Bill = () => {
         bills: {
           total: total,
           tax: tax,
+          deliveryFee: deliveryFee,
           totalWithTax: totalPriceWithTax,
         },
         items: cartData,
@@ -210,6 +215,22 @@ const Bill = () => {
       }
 
       setOrderInfo(data);
+
+      // Automatically create a Delivery Task & secure tracking token for Delivery orders
+      if ((data.customerDetails?.orderType || customerData.orderType) === "Delivery") {
+        createDeliveryTaskForOrder({
+          orderId: data._id || data.id,
+          zoneId: customerData.deliveryZoneId || null,
+          customerName: data.customerDetails?.name || customerData.customerName,
+          customerPhone: data.customerDetails?.phone || customerData.customerPhone,
+          deliveryAddress: data.customerDetails?.deliveryAddress || customerData.deliveryAddress,
+          deliveryInstructions: customerData.deliveryInstructions || "",
+          deliveryFee: deliveryFee,
+          originalFee: customerData.originalDeliveryFee ?? deliveryFee,
+          feeOverrideReason: customerData.feeOverrideReason || null,
+          estimatedMinutes: customerData.estimatedDeliveryMinutes || 35,
+        }).catch((err) => console.warn("Delivery task creation deferred:", err));
+      }
 
       dispatchOrderSmsIfEnabled({
         eventType: "placed",
@@ -272,6 +293,14 @@ const Bill = () => {
         <p className="text-xs text-[#ababab] font-medium mt-2">VAT ({vatRate}%)</p>
         <h1 className="text-[#f5f5f5] text-md font-bold">GH₵ {tax.toFixed(2)}</h1>
       </div>
+      {deliveryFee > 0 && (
+        <div className="flex items-center justify-between px-5 mt-2">
+          <p className="text-xs text-[#ababab] font-medium mt-2">
+            Delivery Fee {customerData.deliveryZoneName ? `(${customerData.deliveryZoneName})` : ""}
+          </p>
+          <h1 className="text-[#f5f5f5] text-md font-bold">GH₵ {deliveryFee.toFixed(2)}</h1>
+        </div>
+      )}
       <div className="flex items-center justify-between px-5 mt-2">
         <p className="text-xs text-[#ababab] font-medium mt-2">
           Total With Tax

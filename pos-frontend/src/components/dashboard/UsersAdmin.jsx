@@ -18,7 +18,7 @@ import {
   adminChangeUserPin,
 } from "../../https/index";
 
-const ROLES = ["waiter", "cashier", "admin"];
+const ROLES = ["waiter", "cashier", "dispatcher", "rider", "admin"];
 
 const UsersAdmin = () => {
   const queryClient = useQueryClient();

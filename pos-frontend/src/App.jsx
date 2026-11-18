@@ -5,7 +5,7 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { Home, Auth, Orders, Tables, Menu, Dashboard } from "./pages";
+import { Home, Auth, Orders, Tables, Menu, Dashboard, RiderApp, TrackDelivery } from "./pages";
 import Header from "./components/shared/Header";
 import { useSelector } from "react-redux";
 import useLoadData from "./hooks/useLoadData";
@@ -38,10 +38,19 @@ VITE_PAYSTACK_CURRENCY=GHS`}
 function Layout() {
   const isLoading = useLoadData();
   const location = useLocation();
+  const isPublicTracking = location.pathname.startsWith("/track/");
   const hideHeaderRoutes = ["/auth"];
-  const { isAuth } = useSelector(state => state.user);
+  const { isAuth, role } = useSelector(state => state.user);
+  const normalizedRole = (role || "").toLowerCase();
 
   if (!isSupabaseConfigured) return <MissingEnvScreen />;
+  if (isPublicTracking) {
+    return (
+      <Routes>
+        <Route path="/track/:secureToken" element={<TrackDelivery />} />
+      </Routes>
+    );
+  }
   if(isLoading) return <FullScreenLoader />
 
   return (
@@ -53,11 +62,20 @@ function Layout() {
           path="/"
           element={
             <ProtectedRoutes>
-              <Home />
+              {normalizedRole === "rider" ? <Navigate to="/rider" replace /> : <Home />}
             </ProtectedRoutes>
           }
         />
-        <Route path="/auth" element={isAuth ? <Navigate to="/" /> : <Auth />} />
+        <Route path="/auth" element={isAuth ? <Navigate to={normalizedRole === "rider" ? "/rider" : "/"} /> : <Auth />} />
+        <Route
+          path="/rider"
+          element={
+            <ProtectedRoutes allowedRoles={["rider", "admin"]}>
+              <RiderApp />
+            </ProtectedRoutes>
+          }
+        />
+        <Route path="/track/:secureToken" element={<TrackDelivery />} />
         <Route
           path="/orders"
           element={
@@ -85,7 +103,7 @@ function Layout() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoutes>
+            <ProtectedRoutes allowedRoles={["admin", "dispatcher"]}>
               <Dashboard />
             </ProtectedRoutes>
           }
@@ -96,10 +114,13 @@ function Layout() {
   );
 }
 
-function ProtectedRoutes({ children }) {
-  const { isAuth } = useSelector((state) => state.user);
+function ProtectedRoutes({ children, allowedRoles = null }) {
+  const { isAuth, role } = useSelector((state) => state.user);
   if (!isAuth) {
     return <Navigate to="/auth" />;
+  }
+  if (allowedRoles && !allowedRoles.includes((role || "").toLowerCase())) {
+    return <Navigate to={(role || "").toLowerCase() === "rider" ? "/rider" : "/"} replace />;
   }
 
   return children;

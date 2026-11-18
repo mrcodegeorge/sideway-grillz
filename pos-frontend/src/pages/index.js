@@ -4,3 +4,5 @@ export { default as Auth } from './Auth.jsx'
 export { default as Tables } from './Tables.jsx'
 export { default as Menu } from './Menu.jsx'
 export { default as Dashboard } from "./Dashboard.jsx"
+export { default as RiderApp } from "./RiderApp.jsx"
+export { default as TrackDelivery } from "./TrackDelivery.jsx"
