@@ -3,11 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { getTotalPrice } from "../../redux/slices/cartSlice";
 import {
   addOrder,
+  appendItemsToOrder,
   recordPaystackPayment,
   updateTable,
 } from "../../https/index";
 import { enqueueSnackbar } from "notistack";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { removeAllItems } from "../../redux/slices/cartSlice";
 import { removeCustomer } from "../../redux/slices/customerSlice";
 import Invoice from "../invoice/Invoice";
@@ -34,6 +35,7 @@ function loadScript(src) {
 
 const Bill = () => {
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
 
   const userData = useSelector((state) => state.user);
   const customerData = useSelector((state) => state.customer);
@@ -60,10 +62,39 @@ const Bill = () => {
   const [showInvoice, setShowInvoice] = useState(false);
   const [orderInfo, setOrderInfo] = useState();
 
+  const appendItemsMutation = useMutation({
+    mutationFn: (reqData) => appendItemsToOrder(reqData),
+    onSuccess: (resData) => {
+      const updatedOrder = resData?.data?.data;
+      setOrderInfo(updatedOrder);
+      dispatch(removeCustomer());
+      dispatch(removeAllItems());
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["tables"] });
+      enqueueSnackbar("Items added to open table order!", { variant: "success" });
+      setPaymentMethod(undefined);
+      setShowInvoice(true);
+    },
+    onError: (err) => {
+      enqueueSnackbar(err?.response?.data?.message || "Failed to update open order.", {
+        variant: "error",
+      });
+    },
+  });
+
   const handlePlaceOrder = async () => {
     if (!cartData || cartData.length === 0) {
       enqueueSnackbar("Cart is empty! Add items first.", {
         variant: "warning",
+      });
+      return;
+    }
+
+    if (customerData.activeOrderId) {
+      appendItemsMutation.mutate({
+        orderId: customerData.activeOrderId,
+        newItems: cartData,
+        vatRate,
       });
       return;
     }
@@ -333,9 +364,10 @@ const Bill = () => {
         </button>
         <button
           onClick={handlePlaceOrder}
-          className="bg-[#f6b100] px-4 py-3 w-full rounded-lg text-[#1f1f1f] font-semibold text-lg"
+          disabled={appendItemsMutation.isPending || orderMutation.isPending}
+          className="bg-[#f6b100] px-4 py-3 w-full rounded-lg text-[#1f1f1f] font-semibold text-lg cursor-pointer"
         >
-          Place Order
+          {customerData.activeOrderId ? "Add to Open Order" : "Place Order"}
         </button>
       </div>
 

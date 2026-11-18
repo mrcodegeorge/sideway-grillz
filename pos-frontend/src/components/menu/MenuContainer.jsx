@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getMenus } from "../../utils/menuStorage";
+import { getMenus, syncMenusFromCloud, subscribeToMenuChanges } from "../../utils/menuStorage";
 import { FaDotCircle, FaShoppingCart } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import { addItems } from "../../redux/slices/cartSlice";
@@ -20,9 +20,12 @@ const MenuContainer = () => {
     };
     window.addEventListener("menus-updated", syncMenus);
     window.addEventListener("storage", syncMenus);
+    syncMenusFromCloud();
+    const unsubscribe = subscribeToMenuChanges();
     return () => {
       window.removeEventListener("menus-updated", syncMenus);
       window.removeEventListener("storage", syncMenus);
+      unsubscribe();
     };
   }, []);
 

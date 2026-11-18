@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { enqueueSnackbar } from "notistack";
-import { FaEdit, FaImage, FaTimes, FaTrash, FaUtensils } from "react-icons/fa";
+import { FaCloudUploadAlt, FaEdit, FaImage, FaSyncAlt, FaTimes, FaTrash, FaUtensils } from "react-icons/fa";
 import {
   deleteCategory,
   deleteDish,
   getMenus,
+  pushAllMenusToCloud,
+  subscribeToMenuChanges,
+  syncMenusFromCloud,
   updateCategory,
   updateDish,
 } from "../../utils/menuStorage";
@@ -56,6 +59,7 @@ const MenuAdmin = () => {
   const [selectedCatId, setSelectedCatId] = useState(() => getMenus()[0]?.id || null);
   const [editingCat, setEditingCat] = useState(null);
   const [editingDish, setEditingDish] = useState(null);
+  const [syncingCloud, setSyncingCloud] = useState(false);
 
   useEffect(() => {
     const sync = () => {
@@ -66,8 +70,47 @@ const MenuAdmin = () => {
       );
     };
     window.addEventListener("menus-updated", sync);
-    return () => window.removeEventListener("menus-updated", sync);
+    syncMenusFromCloud();
+    const unsubscribe = subscribeToMenuChanges();
+    return () => {
+      window.removeEventListener("menus-updated", sync);
+      unsubscribe();
+    };
   }, []);
+
+  const handlePushToCloud = async () => {
+    setSyncingCloud(true);
+    try {
+      await pushAllMenusToCloud(menus);
+      enqueueSnackbar("All menu categories & dishes synced to Supabase!", { variant: "success" });
+    } catch (err) {
+      enqueueSnackbar(
+        err?.message || "Could not sync to Supabase. Ensure supabase-menu.sql has been run.",
+        { variant: "error" }
+      );
+    } finally {
+      setSyncingCloud(false);
+    }
+  };
+
+  const handlePullFromCloud = async () => {
+    setSyncingCloud(true);
+    try {
+      const res = await syncMenusFromCloud();
+      if (res.synced) {
+        enqueueSnackbar(
+          res.empty
+            ? "Cloud menu is empty. Click 'Sync Menu to Cloud' to upload your current menu."
+            : "Menu refreshed from Supabase!",
+          { variant: res.empty ? "info" : "success" }
+        );
+      } else {
+        enqueueSnackbar(res.error || "Failed to fetch cloud menu.", { variant: "error" });
+      }
+    } finally {
+      setSyncingCloud(false);
+    }
+  };
 
   const selectedCategory = menus.find((c) => Number(c.id) === Number(selectedCatId)) || menus[0];
 
@@ -120,15 +163,35 @@ const MenuAdmin = () => {
     <div className="container mx-auto px-4 sm:px-6 md:px-4 py-4 space-y-6">
       {/* Categories Section */}
       <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-2xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-[#f5f5f5] flex items-center gap-2">
               <FaUtensils className="text-yellow-400" />
               Menu Categories ({menus.length})
             </h2>
             <p className="text-xs text-[#ababab]">
-              Click a category to manage its dishes, or edit/delete categories
+              Click a category to manage its dishes, or edit/delete categories (auto-synced to Supabase)
             </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePullFromCloud}
+              disabled={syncingCloud}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#262626] hover:bg-[#333] border border-[#333] text-xs font-semibold text-[#f5f5f5] cursor-pointer disabled:opacity-50"
+            >
+              <FaSyncAlt className={syncingCloud ? "animate-spin" : ""} size={12} />
+              <span>Pull from Cloud</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePushToCloud}
+              disabled={syncingCloud}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-black text-xs font-bold cursor-pointer disabled:opacity-50"
+            >
+              <FaCloudUploadAlt size={13} />
+              <span>Sync Menu to Cloud</span>
+            </button>
           </div>
         </div>
 

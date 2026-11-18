@@ -711,6 +711,137 @@ export const updateOrderStatus = async ({ orderId, orderStatus }) => {
   };
 };
 
+export const appendItemsToOrder = async ({ orderId, newItems = [], vatRate = 5.25 }) => {
+  const { data: existing, error: fetchErr } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchErr || !existing) {
+    throw { response: { data: { message: fetchErr?.message || "Order not found." } } };
+  }
+
+  const mergedItems = [...(existing.items || [])];
+  for (const item of newItems) {
+    const idx = mergedItems.findIndex(
+      (m) =>
+        m.name === item.name &&
+        Number(m.pricePerQuantity || 0) === Number(item.pricePerQuantity || 0)
+    );
+    if (idx >= 0) {
+      const nextQty = Number(mergedItems[idx].quantity || 0) + Number(item.quantity || 0);
+      mergedItems[idx] = {
+        ...mergedItems[idx],
+        quantity: nextQty,
+        price: Number(mergedItems[idx].price || 0) + Number(item.price || 0),
+      };
+    } else {
+      mergedItems.push(item);
+    }
+  }
+
+  const subtotal = mergedItems.reduce((sum, i) => sum + Number(i.price || 0), 0);
+  const tax = (subtotal * Number(vatRate || 0)) / 100;
+  const deliveryFee = Number(existing.bills?.deliveryFee || 0);
+  const totalWithTax = subtotal + tax + deliveryFee;
+
+  const updatedBills = {
+    ...(existing.bills || {}),
+    total: subtotal,
+    tax,
+    deliveryFee,
+    totalWithTax,
+  };
+
+  const { data: updated, error: updateErr } = await supabase
+    .from("orders")
+    .update({
+      items: mergedItems,
+      bills: updatedBills,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", orderId)
+    .select()
+    .single();
+
+  if (updateErr) {
+    throw { response: { data: { message: updateErr.message } } };
+  }
+
+  logAuditEvent({
+    action: "ORDER_ITEMS_ADDED",
+    entityType: "Order",
+    entityId: updated.id,
+    details: `Added ${newItems.length} item(s) to open order ${String(updated.id).slice(0, 8)} • New total: GH₵ ${totalWithTax.toFixed(2)}`,
+  });
+
+  return {
+    data: {
+      success: true,
+      message: "Items added to order!",
+      data: {
+        _id: updated.id,
+        id: updated.id,
+        waiterId: updated.waiter_id,
+        waiterName: updated.waiter_name,
+        customerDetails: updated.customer_details,
+        orderStatus: updated.order_status,
+        orderDate: updated.order_date,
+        bills: updated.bills,
+        items: updated.items,
+        table: updated.table_id,
+        paymentMethod: updated.payment_method,
+        paymentData: updated.payment_data,
+      },
+    },
+  };
+};
+
+export const transferTableOrder = async ({ orderId, fromTableId, toTableId }) => {
+  const { data: destTable, error: destErr } = await supabase
+    .from("restaurant_tables")
+    .select("id, table_no, status")
+    .eq("id", toTableId)
+    .single();
+
+  if (destErr || !destTable) {
+    throw { response: { data: { message: "Destination table not found." } } };
+  }
+  if (destTable.status === "Booked") {
+    throw { response: { data: { message: "Destination table is already booked." } } };
+  }
+
+  const { error: orderErr } = await supabase
+    .from("orders")
+    .update({ table_id: toTableId, updated_at: new Date().toISOString() })
+    .eq("id", orderId);
+  if (orderErr) {
+    throw { response: { data: { message: orderErr.message } } };
+  }
+
+  if (fromTableId) {
+    await supabase
+      .from("restaurant_tables")
+      .update({ status: "Available", current_order_id: null })
+      .eq("id", fromTableId);
+  }
+
+  await supabase
+    .from("restaurant_tables")
+    .update({ status: "Booked", current_order_id: orderId })
+    .eq("id", toTableId);
+
+  logAuditEvent({
+    action: "TABLE_TRANSFERRED",
+    entityType: "Table",
+    entityId: toTableId,
+    details: `Moved order ${String(orderId).slice(0, 8)} to Table ${destTable.table_no}`,
+  });
+
+  return { data: { success: true, message: `Transferred to Table ${destTable.table_no}` } };
+};
+
 // ==========================================
 // Payment Endpoints (Paystack)
 // ==========================================

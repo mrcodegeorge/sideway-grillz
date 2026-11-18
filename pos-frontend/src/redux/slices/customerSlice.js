@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
     orderId: "",
+    activeOrderId: null,
     customerName: "",
     customerPhone: "",
     guests: 0,
@@ -36,8 +37,10 @@ const customerSlice = createSlice({
               originalDeliveryFee,
               feeOverrideReason,
               estimatedDeliveryMinutes,
+              activeOrderId,
             } = action.payload;
             state.orderId = `${Date.now()}`;
+            state.activeOrderId = activeOrderId || null;
             state.customerName = name;
             state.customerPhone = phone;
             state.guests = guests || 0;
@@ -53,6 +56,7 @@ const customerSlice = createSlice({
         },
 
         removeCustomer: (state) => {
+            state.activeOrderId = null;
             state.customerName = "";
             state.customerPhone = "";
             state.guests = 0;
