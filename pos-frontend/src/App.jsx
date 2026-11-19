@@ -5,7 +5,7 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { Home, Auth, Orders, Tables, Menu, Dashboard, RiderApp, TrackDelivery } from "./pages";
+import { Home, Auth, Orders, Tables, Menu, Dashboard, RiderApp, TrackDelivery, KitchenDisplay } from "./pages";
 import Header from "./components/shared/Header";
 import { useSelector } from "react-redux";
 import useLoadData from "./hooks/useLoadData";
@@ -89,6 +89,14 @@ function Layout() {
           element={
             <ProtectedRoutes allowedRoles={["rider", "admin"]}>
               <RiderApp />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path="/kitchen"
+          element={
+            <ProtectedRoutes allowedRoles={["admin", "kitchen", "cashier", "waiter", "dispatcher"]}>
+              <KitchenDisplay />
             </ProtectedRoutes>
           }
         />

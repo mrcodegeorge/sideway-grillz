@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FaSearch, FaUserCircle, FaBell, FaSignOutAlt, FaTachometerAlt, FaDatabase, FaCheckDouble, FaExclamationTriangle, FaUtensils, FaWifi, FaSun, FaMoon } from "react-icons/fa";
+import { FaSearch, FaUserCircle, FaBell, FaSignOutAlt, FaTachometerAlt, FaDatabase, FaCheckDouble, FaExclamationTriangle, FaUtensils, FaWifi, FaSun, FaMoon, FaFire } from "react-icons/fa";
 import logo from "../../assets/images/logo.png";
 import { useDispatch, useSelector } from "react-redux";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -228,6 +228,16 @@ const Header = () => {
           >
             <FaMoneyBillWave size={15} />
             <span className="hidden md:inline">Shift Handover</span>
+          </button>
+
+          {/* Kitchen Display Quick Link */}
+          <button
+            type="button"
+            onClick={() => navigate("/kitchen")}
+            className="bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#333] rounded-xl p-2.5 cursor-pointer text-orange-400 transition-colors"
+            title="Live Kitchen Display (KDS)"
+          >
+            <FaFire className="text-lg" />
           </button>
 
           {/* Admin Dashboard Quick Link */}

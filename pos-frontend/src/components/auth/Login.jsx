@@ -149,6 +149,8 @@ const Login = () => {
       const normalizedRole = (role || "").toLowerCase();
       if (normalizedRole === "rider") {
         navigate("/rider");
+      } else if (normalizedRole === "kitchen") {
+        navigate("/kitchen");
       } else if (normalizedRole === "waiter") {
         navigate("/menu");
         setTimeout(() => {
@@ -222,10 +224,10 @@ const Login = () => {
                 type="button"
                 onClick={() => handleNumpad(val)}
                 className={`py-2 rounded-lg font-bold text-base transition-colors ${val === "clear"
-                    ? "bg-red-950/40 text-red-400 hover:bg-red-900/60"
-                    : val === "del"
-                      ? "bg-yellow-950/40 text-yellow-400 hover:bg-yellow-900/60"
-                      : "bg-[#242424] text-white hover:bg-[#333]"
+                  ? "bg-red-950/40 text-red-400 hover:bg-red-900/60"
+                  : val === "del"
+                    ? "bg-yellow-950/40 text-yellow-400 hover:bg-yellow-900/60"
+                    : "bg-[#242424] text-white hover:bg-[#333]"
                   }`}
               >
                 {val === "del" ? "⌫" : val === "clear" ? "C" : val}

@@ -14,6 +14,7 @@ import AuditTrailsAdmin from "../components/dashboard/AuditTrailsAdmin";
 import DeliveryManagement from "../components/dashboard/delivery/DeliveryManagement";
 import MenuAdmin from "../components/dashboard/MenuAdmin";
 import ZReportAdmin from "../components/dashboard/ZReportAdmin";
+import BackupDbAdmin from "../components/dashboard/BackupDbAdmin";
 
 const buttons = [
   { label: "Add Table", icon: <FaTable />, action: "table" },
@@ -21,7 +22,7 @@ const buttons = [
   { label: "Add Dishes", icon: <BiSolidDish />, action: "dishes" },
 ];
 
-const tabs = ["Metrics", "Orders", "Menu", "Delivery", "Accounting", "Z-Report", "Customers", "Incidents", "Users", "Shift Handovers", "Audit Trails", "Settings"];
+const tabs = ["Metrics", "Orders", "Menu", "Delivery", "Accounting", "Z-Report", "Customers", "Incidents", "Users", "Shift Handovers", "Audit Trails", "Backup DB", "Settings"];
 
 const Dashboard = () => {
   useEffect(() => {
@@ -82,6 +83,7 @@ const Dashboard = () => {
       {activeTab === "Users" && <UsersAdmin />}
       {activeTab === "Shift Handovers" && <ShiftHandoversAdmin />}
       {activeTab === "Audit Trails" && <AuditTrailsAdmin />}
+      {activeTab === "Backup DB" && <BackupDbAdmin />}
       {activeTab === "Settings" && <SettingsAdmin />}
 
       {modalType && (

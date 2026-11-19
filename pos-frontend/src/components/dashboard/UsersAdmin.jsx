@@ -18,7 +18,7 @@ import {
   adminChangeUserPin,
 } from "../../https/index";
 
-const ROLES = ["waiter", "cashier", "dispatcher", "rider", "admin"];
+const ROLES = ["waiter", "cashier", "kitchen", "dispatcher", "rider", "admin"];
 
 const UsersAdmin = () => {
   const queryClient = useQueryClient();
@@ -290,11 +290,10 @@ const UsersAdmin = () => {
                       </td>
                       <td className="p-3 text-center">
                         <span
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                            u.isActive
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.isActive
                               ? "bg-green-950/60 text-green-400 border border-green-800/40"
                               : "bg-red-950/60 text-red-400 border border-red-800/40"
-                          }`}
+                            }`}
                         >
                           {u.isActive ? "Active" : "Deactivated"}
                         </span>
@@ -323,11 +322,10 @@ const UsersAdmin = () => {
                                   isActive: !u.isActive,
                                 })
                               }
-                              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border ${
-                                u.isActive
+                              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border ${u.isActive
                                   ? "bg-[#1a1a1a] hover:bg-red-600/20 text-red-400 border-red-700/40"
                                   : "bg-[#1a1a1a] hover:bg-green-600/20 text-green-400 border-green-700/40"
-                              }`}
+                                }`}
                               title={
                                 u.isActive
                                   ? "Deactivate Account"

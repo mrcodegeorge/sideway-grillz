@@ -6,3 +6,4 @@ export { default as Menu } from './Menu.jsx'
 export { default as Dashboard } from "./Dashboard.jsx"
 export { default as RiderApp } from "./RiderApp.jsx"
 export { default as TrackDelivery } from "./TrackDelivery.jsx"
+export { default as KitchenDisplay } from "./KitchenDisplay.jsx"

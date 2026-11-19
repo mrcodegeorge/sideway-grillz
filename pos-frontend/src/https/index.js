@@ -14,15 +14,29 @@ import {
   saveOrderToLocalAgent,
 } from "../utils/localSyncAgent";
 import { logAuditEvent } from "../utils/auditStorage";
+import {
+  enqueueFailoverWrite,
+  getBackupSnapshot,
+  getBackupSupabaseClient,
+  getFailoverState,
+  markPrimaryHealthy,
+  markPrimaryUnhealthy,
+  saveBackupSnapshot,
+} from "../utils/backupDb";
 
 const isNetworkError = (err) => {
   if (!navigator.onLine) return true;
+  if (getFailoverState().manualFailover) return true;
   const msg = String(err?.message || err || "").toLowerCase();
   return (
     msg.includes("failed to fetch") ||
     msg.includes("networkerror") ||
     msg.includes("network request failed") ||
-    msg.includes("fetch")
+    msg.includes("fetch") ||
+    msg.includes("timeout") ||
+    msg.includes("502") ||
+    msg.includes("503") ||
+    msg.includes("504")
   );
 };
 
@@ -327,17 +341,46 @@ export const addTable = async ({ tableNo, seats }) => {
 };
 
 const fallbackTables = async () => {
+  markPrimaryUnhealthy("Using backup database for tables");
+  try {
+    const backupClient = getBackupSupabaseClient();
+    if (backupClient && navigator.onLine) {
+      const { data: bTables } = await backupClient
+        .from("restaurant_tables")
+        .select("id, table_no, seats, status")
+        .order("table_no", { ascending: true });
+      if (bTables?.length) {
+        return {
+          data: {
+            success: true,
+            data: bTables.map((t) => ({
+              _id: t.id,
+              id: t.id,
+              tableNo: t.table_no,
+              seats: t.seats,
+              status: t.status,
+              currentOrder: null,
+            })),
+          },
+        };
+      }
+    }
+  } catch {
+    // secondary cloud unavailable
+  }
   try {
     const agentRes = await getLocalAgentTables();
     if (agentRes?.data?.length) return { data: { success: true, data: agentRes.data } };
   } catch {
-    // Local sync agent not running; use browser cache
+    // Local sync agent not running; check IndexedDB backup
   }
+  const idbTables = await getBackupSnapshot("tables", []);
+  if (idbTables?.length) return { data: { success: true, data: idbTables } };
   return { data: { success: true, data: getCachedTables() } };
 };
 
 export const getTables = async () => {
-  if (!navigator.onLine) {
+  if (!navigator.onLine || getFailoverState().manualFailover) {
     return fallbackTables();
   }
 
@@ -380,6 +423,8 @@ export const getTables = async () => {
     }));
 
     setCachedTables(formattedTables);
+    saveBackupSnapshot("tables", formattedTables);
+    markPrimaryHealthy();
 
     return {
       data: {
@@ -431,6 +476,23 @@ export const updateTable = async ({ tableId, ...tableData }) => {
 // ==========================================
 
 const queueOrderOffline = async (orderData) => {
+  markPrimaryUnhealthy("Order saved to failover backup database");
+  await enqueueFailoverWrite({
+    table: "orders",
+    action: "insert",
+    payload: {
+      waiter_id: orderData.waiterId || null,
+      waiter_name: orderData.waiterName || "Staff",
+      customer_details: orderData.customerDetails,
+      order_status: orderData.orderStatus || "InProgress",
+      bills: orderData.bills,
+      items: orderData.items,
+      table_id: orderData.table || null,
+      payment_method: orderData.paymentMethod || "Cash",
+      payment_data: orderData.paymentData || {},
+      order_date: new Date().toISOString(),
+    },
+  });
   try {
     const agentRes = await saveOrderToLocalAgent(orderData);
     if (agentRes?.success) {
@@ -444,14 +506,14 @@ const queueOrderOffline = async (orderData) => {
     data: {
       success: true,
       offline: true,
-      message: "Offline: Order queued and will sync when internet returns.",
+      message: "Failover Backup DB: Order saved locally and will sync when primary DB recovers.",
       data: savedOffline,
     },
   };
 };
 
 export const addOrder = async (orderData) => {
-  if (!navigator.onLine) {
+  if (!navigator.onLine || getFailoverState().manualFailover) {
     return queueOrderOffline(orderData);
   }
 
@@ -555,6 +617,7 @@ const filterOrdersForUser = (orders, session) => {
 };
 
 const fallbackOrders = async (pendingOffline, session) => {
+  markPrimaryUnhealthy("Using backup database for orders");
   try {
     const agentRes = await getLocalAgentOrders();
     if (agentRes?.data) {
@@ -566,12 +629,14 @@ const fallbackOrders = async (pendingOffline, session) => {
       };
     }
   } catch {
-    // Local sync agent not running; use browser cache
+    // Local sync agent not running; check IndexedDB backup
   }
+  const idbOrders = await getBackupSnapshot("orders", []);
+  const cached = idbOrders?.length ? idbOrders : getCachedOrders();
   return {
     data: {
       success: true,
-      data: filterOrdersForUser([...pendingOffline, ...getCachedOrders()], session),
+      data: filterOrdersForUser([...pendingOffline, ...cached], session),
     },
   };
 };
@@ -586,7 +651,7 @@ export const getOrders = async () => {
     // offline or session unavailable
   }
 
-  if (!navigator.onLine) {
+  if (!navigator.onLine || getFailoverState().manualFailover) {
     return fallbackOrders(pendingOffline, session);
   }
 
@@ -651,6 +716,8 @@ export const getOrders = async () => {
     }));
 
     setCachedOrders(formattedOrders);
+    saveBackupSnapshot("orders", formattedOrders);
+    markPrimaryHealthy();
 
     return {
       data: {
@@ -664,6 +731,52 @@ export const getOrders = async () => {
     }
     throw err;
   }
+};
+
+export const getKitchenOrders = async () => {
+  const { data: orders, error } = await supabase
+    .from("orders")
+    .select(`
+      id,
+      waiter_id,
+      waiter_name,
+      customer_details,
+      order_status,
+      order_date,
+      bills,
+      items,
+      payment_method,
+      restaurant_tables:table_id (
+        id,
+        table_no
+      )
+    `)
+    .in("order_status", ["InProgress", "Ready"])
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw { response: { data: { message: error.message } } };
+  }
+
+  return (orders || []).map((o) => ({
+    _id: o.id,
+    id: o.id,
+    waiterId: o.waiter_id,
+    waiterName: o.waiter_name,
+    customerDetails: o.customer_details,
+    orderStatus: o.order_status,
+    orderDate: o.order_date,
+    bills: o.bills,
+    items: o.items,
+    paymentMethod: o.payment_method,
+    table: o.restaurant_tables
+      ? {
+        _id: o.restaurant_tables.id,
+        id: o.restaurant_tables.id,
+        tableNo: o.restaurant_tables.table_no,
+      }
+      : null,
+  }));
 };
 
 export const updateOrderStatus = async ({ orderId, orderStatus }) => {

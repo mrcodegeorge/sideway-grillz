@@ -8,6 +8,12 @@ import {
   OFFLINE_QUEUE_EVENT,
 } from "../../utils/offlineQueue";
 import { addOrder } from "../../https/index";
+import {
+  checkPrimarySupabaseHealth,
+  DB_FAILOVER_EVENT,
+  getFailoverState,
+  syncFailoverWritesToPrimary,
+} from "../../utils/backupDb";
 
 const OfflineBanner = () => {
   const queryClient = useQueryClient();
@@ -15,6 +21,7 @@ const OfflineBanner = () => {
     typeof navigator !== "undefined" ? navigator.onLine : true
   );
   const [pendingCount, setPendingCount] = useState(() => getOfflineOrders().length);
+  const [failover, setFailover] = useState(() => getFailoverState());
   const [syncing, setSyncing] = useState(false);
 
   const refreshQueueCount = useCallback(() => {
@@ -64,9 +71,26 @@ const OfflineBanner = () => {
       setIsOnline(false);
     };
 
+    const handleFailoverChange = (e) => {
+      setFailover(e.detail || getFailoverState());
+    };
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     window.addEventListener(OFFLINE_QUEUE_EVENT, refreshQueueCount);
+    window.addEventListener(DB_FAILOVER_EVENT, handleFailoverChange);
+
+    // Periodic primary DB recovery check when in failover mode
+    const recoveryTimer = setInterval(async () => {
+      const current = getFailoverState();
+      if (!current.primaryHealthy && !current.manualFailover && navigator.onLine) {
+        const next = await checkPrimarySupabaseHealth();
+        if (next.primaryHealthy) {
+          await syncFailoverWritesToPrimary();
+          syncOfflineOrders();
+        }
+      }
+    }, 25000);
 
     // Attempt initial sync if online on app load
     if (navigator.onLine && getOfflineOrders().length > 0) {
@@ -74,18 +98,23 @@ const OfflineBanner = () => {
     }
 
     return () => {
+      clearInterval(recoveryTimer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener(OFFLINE_QUEUE_EVENT, refreshQueueCount);
+      window.removeEventListener(DB_FAILOVER_EVENT, handleFailoverChange);
     };
   }, [syncOfflineOrders, refreshQueueCount]);
 
-  if (isOnline && pendingCount === 0) return null;
+  const inFailover = !failover.primaryHealthy;
+  if (isOnline && pendingCount === 0 && !inFailover) return null;
 
   return (
     <div
       className={`px-4 py-1.5 text-xs font-semibold flex items-center justify-center gap-3 ${!isOnline
-          ? "bg-red-900/90 text-red-100 border-b border-red-700"
+        ? "bg-red-900/90 text-red-100 border-b border-red-700"
+        : inFailover
+          ? "bg-amber-600/95 text-black border-b border-amber-700"
           : "bg-yellow-500/95 text-gray-900 border-b border-yellow-600"
         }`}
     >
@@ -94,6 +123,11 @@ const OfflineBanner = () => {
         <span>
           Offline Mode — Orders are saved on this device
           {pendingCount > 0 ? ` (${pendingCount} queued)` : ""} and will auto-sync when online.
+        </span>
+      ) : inFailover ? (
+        <span>
+          Primary Supabase Unresponsive — Running on Failover Backup DB (IndexedDB
+          {pendingCount > 0 ? ` • ${pendingCount} queued` : ""}). Auto-recovering...
         </span>
       ) : (
         <>
