@@ -170,22 +170,22 @@ const Login = () => {
   });
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
+    <div className="w-full">
+      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
         {/* Username */}
         <div>
-          <label className="block text-[#ababab] mb-2 mt-3 text-sm font-medium">
+          <label className="block text-[#ababab] mb-1.5 text-xs sm:text-sm font-medium">
             Employee Username
           </label>
-          <div className="flex items-center gap-3 rounded-lg p-4 bg-[#1f1f1f] border border-[#333] focus-within:border-yellow-400">
-            <FaUserTag className="text-yellow-400 text-lg" />
+          <div className="flex items-center gap-3 rounded-xl px-3.5 py-3 sm:p-4 bg-[#1f1f1f] border border-[#333] focus-within:border-yellow-400">
+            <FaUserTag className="text-yellow-400 text-base sm:text-lg shrink-0" />
             <input
               type="text"
               name="username"
               value={formData.username}
               onChange={handleChange}
               placeholder="e.g. kwame, waiter1, admin"
-              className="bg-transparent flex-1 text-white focus:outline-none text-base"
+              className="bg-transparent flex-1 min-w-0 text-white focus:outline-none text-sm sm:text-base"
               autoComplete="username"
               required
             />
@@ -194,18 +194,18 @@ const Login = () => {
 
         {/* PIN / Password */}
         <div>
-          <label className="block text-[#ababab] mb-2 mt-4 text-sm font-medium">
+          <label className="block text-[#ababab] mb-1.5 text-xs sm:text-sm font-medium">
             PIN or Password
           </label>
-          <div className="flex items-center gap-3 rounded-lg p-4 bg-[#1f1f1f] border border-[#333] focus-within:border-yellow-400">
-            <FaLock className="text-yellow-400 text-lg" />
+          <div className="flex items-center gap-3 rounded-xl px-3.5 py-3 sm:p-4 bg-[#1f1f1f] border border-[#333] focus-within:border-yellow-400">
+            <FaLock className="text-yellow-400 text-base sm:text-lg shrink-0" />
             <input
               type="password"
               name="pin"
               value={formData.pin}
               onChange={handleChange}
               placeholder="Enter PIN / password"
-              className="bg-transparent flex-1 text-white focus:outline-none text-base tracking-widest"
+              className="bg-transparent flex-1 min-w-0 text-white focus:outline-none text-sm sm:text-base tracking-widest"
               autoComplete="current-password"
               required
             />
@@ -213,8 +213,8 @@ const Login = () => {
         </div>
 
         {/* Quick Touch Numpad for Waiter PIN */}
-        <div className="mt-4 bg-[#141414] p-3 rounded-xl border border-[#2b2b2b]">
-          <p className="text-xs text-[#777] mb-2 text-center uppercase tracking-wider font-semibold">
+        <div className="bg-[#141414] p-2.5 sm:p-3 rounded-xl border border-[#2b2b2b]">
+          <p className="text-[10px] sm:text-xs text-[#777] mb-2 text-center uppercase tracking-wider font-semibold">
             Quick Touch PIN Pad
           </p>
           <div className="grid grid-cols-3 gap-2">
@@ -223,7 +223,7 @@ const Login = () => {
                 key={val}
                 type="button"
                 onClick={() => handleNumpad(val)}
-                className={`py-2 rounded-lg font-bold text-base transition-colors ${val === "clear"
+                className={`min-h-[44px] py-2.5 rounded-lg font-bold text-base active:scale-95 transition-all select-none ${val === "clear"
                   ? "bg-red-950/40 text-red-400 hover:bg-red-900/60"
                   : val === "del"
                     ? "bg-yellow-950/40 text-yellow-400 hover:bg-yellow-900/60"
@@ -237,14 +237,14 @@ const Login = () => {
         </div>
 
         {/* Forgot PIN / Password Link */}
-        <div className="flex justify-end mt-3">
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={() => {
               setForgotIdentifier(formData.username || "");
               setShowForgotModal(true);
             }}
-            className="text-xs text-yellow-400 hover:underline font-medium"
+            className="text-xs text-yellow-400 hover:underline font-medium py-1"
           >
             Forgot PIN / Password?
           </button>
@@ -254,7 +254,7 @@ const Login = () => {
         <button
           type="submit"
           disabled={loginMutation.isPending}
-          className="w-full rounded-lg mt-4 py-3.5 text-lg bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold transition-all shadow-lg shadow-yellow-500/20 disabled:opacity-50"
+          className="w-full rounded-xl py-3 sm:py-3.5 text-base sm:text-lg bg-yellow-400 hover:bg-yellow-300 active:scale-[0.99] text-gray-900 font-bold transition-all shadow-lg shadow-yellow-500/20 disabled:opacity-50"
         >
           {loginMutation.isPending ? "Signing In..." : "Clock In / Sign In"}
         </button>
